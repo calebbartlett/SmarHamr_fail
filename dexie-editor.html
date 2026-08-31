@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SmarHamr — Dexie Editor (Guru Mode)</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+
+<body>
+
+<div class="flex" style="height:100vh;">
+
+    <!-- LEFT PANEL: Dexie Table List -->
+    <div class="panel" style="width:300px; margin:0; border-radius:0; overflow-y:auto;">
+        <h2>Dexie Editor</h2>
+        <p>Load a Dexie export and inspect all tables.</p>
+
+        <input type="file" id="dexieFile" accept=".json,.gz" />
+
+        <button class="button mt-10" onclick="loadDexieExport()">
+            Load Dexie Export
+        </button>
+
+        <h3 class="mt-20">Tables</h3>
+        <div id="tableList">
+            <p><em>No Dexie database loaded.</em></p>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: Table Viewer -->
+    <div class="flex column scroll" style="flex:1; padding:20px;">
+
+        <div class="panel">
+            <h3>Selected Table</h3>
+            <p id="selectedTableName"><em>No table selected.</em></p>
+        </div>
+
+        <div class="panel">
+            <h3>Rows</h3>
+            <div id="rowList">
+                <p><em>No rows to display.</em></p>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Row JSON</h3>
+            <textarea id="rowJson" class="code-block" style="min-height:200px;"
+                placeholder="Select a row to view/edit JSON..."></textarea>
+
+            <button class="button mt-10" onclick="applyRowEdit()">
+                Apply Row Edit
+            </button>
+        </div>
+
+        <button class="button mt-20" onclick="exportDexieJson()">
+            Export Modified Dexie JSON
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   Placeholder JS — You will replace this with real Dexie logic
+--------------------------------------------------------- */
+
+let dexieData = null;
+let currentTable = null;
+let currentRowIndex = null;
+
+function loadDexieExport() {
+    alert("TODO: Parse Dexie JSON or JSON.GZ and populate table list.");
+}
+
+function selectTable(tableName) {
+    alert("TODO: Display rows for table: " + tableName);
+}
+
+function selectRow(index) {
+    alert("TODO: Load row JSON for editing.");
+}
+
+function applyRowEdit() {
+    alert("TODO: Apply edited JSON back into Dexie structure.");
+}
+
+function exportDexieJson() {
+    alert("TODO: Rebuild Dexie JSON and trigger download.");
+}
+</script>
+
+</body>
+</html>
