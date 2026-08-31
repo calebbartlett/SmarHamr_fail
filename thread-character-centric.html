@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SmarHamr — Character‑Centric Mode</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+
+<body>
+
+<div class="flex" style="height:100vh;">
+
+    <!-- LEFT PANEL: Character Selection -->
+    <div class="panel" style="width:300px; margin:0; border-radius:0; overflow-y:auto;">
+        <h2>Character‑Centric Mode</h2>
+        <p>Select a character asset to root a new thread.</p>
+
+        <div id="characterList">
+            <!-- Dynamically populated later -->
+            <p><em>No characters loaded yet.</em></p>
+        </div>
+
+        <button class="button mt-20" onclick="loadCharacterAssets()">
+            Load Character Assets
+        </button>
+
+        <button class="button mt-10" onclick="createNewCharacter()">
+            Create New Character
+        </button>
+    </div>
+
+    <!-- RIGHT PANEL: Thread Builder -->
+    <div class="flex column scroll" style="flex:1; padding:20px;">
+
+        <div class="panel">
+            <h3>Thread Root Asset</h3>
+            <p id="rootAssetInfo"><em>No character selected.</em></p>
+        </div>
+
+        <div class="panel">
+            <h3>Thread Lore</h3>
+            <textarea id="threadLore" placeholder="Thread-specific lore goes here..."></textarea>
+        </div>
+
+        <div class="panel">
+            <h3>Thread Memory</h3>
+            <textarea id="threadMemory" placeholder="Thread-specific memory goes here..."></textarea>
+        </div>
+
+        <div class="panel">
+            <h3>Thread Messages</h3>
+            <textarea id="threadMessages" placeholder="Message history will appear here..."></textarea>
+        </div>
+
+        <button class="button mt-20" onclick="saveThread()">
+            Save Thread
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   Placeholder JS — You will replace this with Dexie logic
+--------------------------------------------------------- */
+
+function loadCharacterAssets() {
+    alert("TODO: Load character assets from Dexie or JSON export.");
+}
+
+function createNewCharacter() {
+    alert("TODO: Open character creation UI.");
+}
+
+function saveThread() {
+    alert("TODO: Save thread to Dexie or export JSON.");
+}
+</script>
+
+</body>
+</html>
