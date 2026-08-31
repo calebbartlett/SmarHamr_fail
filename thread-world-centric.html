@@ -10,7 +10,7 @@
 
 <div class="flex" style="height:100vh;">
 
-    <!-- LEFT PANEL: World Selection + Import/Reset -->
+    <!-- LEFT PANEL -->
     <div class="panel" style="width:320px; margin:0; border-radius:0; overflow-y:auto;">
         <h2>World‑Centric Mode</h2>
         <p>Root threads in world assets.</p>
@@ -20,25 +20,25 @@
 
         <input type="file" id="dexieFile" accept=".json" />
 
-        <button class="button mt-10" onclick="loadDexieExport()">
+        <button class="button mt-10" onclick="importDexie()">
             Load Export (JSON)
         </button>
 
-        <button class="button mt-10" onclick="loadScratchDexie()">
+        <button class="button mt-10" onclick="resetScratch()">
             Reset to Scratch
+        </button>
+
+        <button class="button mt-10" onclick="exportDexie()">
+            Export Dexie (gzip)
         </button>
 
         <h3 class="mt-20">Worlds</h3>
         <div id="worldList">
             <p><em>No worlds loaded yet.</em></p>
         </div>
-
-        <button class="button mt-20" onclick="createNewWorld()">
-            Create New World (placeholder)
-        </button>
     </div>
 
-    <!-- RIGHT PANEL: Thread Builder -->
+    <!-- RIGHT PANEL -->
     <div class="flex column scroll" style="flex:1; padding:20px;">
 
         <div class="panel">
@@ -48,22 +48,22 @@
 
         <div class="panel">
             <h3>Global World Lore</h3>
-            <textarea id="worldLore" placeholder="World asset lore goes here..."></textarea>
+            <textarea id="worldLore"></textarea>
         </div>
 
         <div class="panel">
             <h3>Thread‑Specific Lore</h3>
-            <textarea id="threadLore" placeholder="Thread-specific lore goes here..."></textarea>
+            <textarea id="threadLore"></textarea>
         </div>
 
         <div class="panel">
             <h3>Thread Memory</h3>
-            <textarea id="threadMemory" placeholder="Thread-specific memory goes here..."></textarea>
+            <textarea id="threadMemory"></textarea>
         </div>
 
         <div class="panel">
             <h3>Thread Messages</h3>
-            <textarea id="threadMessages" placeholder="Message history will appear here..."></textarea>
+            <textarea id="threadMessages"></textarea>
         </div>
 
         <button class="button mt-20" onclick="saveThread()">
@@ -74,67 +74,57 @@
 
 </div>
 
+<script src="smarhamr-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+
 <script>
 let dexieData = null;
 let currentWorld = null;
 
-window.addEventListener('load', () => {
-    loadScratchDexie();
+window.addEventListener("load", async () => {
+    dexieData = await smarhamrLoadScratch();
+    document.getElementById("dataSourceLabel").textContent = "Scratch Dexie loaded";
+    renderWorlds();
 });
 
-async function loadScratchDexie() {
-    try {
-        const res = await fetch('dexie-scratch.json');
-        dexieData = await res.json();
-        document.getElementById('dataSourceLabel').textContent = 'Scratch Dexie loaded';
+function resetScratch() {
+    smarhamrLoadScratch().then(data => {
+        dexieData = data;
+        document.getElementById("dataSourceLabel").textContent = "Scratch Dexie loaded";
         renderWorlds();
-    } catch (e) {
-        document.getElementById('dataSourceLabel').textContent = 'Failed to load scratch Dexie';
-        console.error(e);
-    }
+    });
 }
 
-function loadDexieExport() {
-    const input = document.getElementById('dexieFile');
-    if (!input.files || !input.files[0]) {
-        alert('Select a JSON export file first.');
-        return;
-    }
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = e => {
-        try {
-            dexieData = JSON.parse(e.target.result);
-            document.getElementById('dataSourceLabel').textContent = 'Export loaded: ' + file.name;
-            renderWorlds();
-        } catch (err) {
-            alert('Invalid JSON export.');
-            console.error(err);
-        }
-    };
-    reader.readAsText(file);
+function importDexie() {
+    const file = document.getElementById("dexieFile").files[0];
+    if (!file) return alert("Choose a JSON file first.");
+
+    smarhamrLoadExport(file, data => {
+        dexieData = data;
+        document.getElementById("dataSourceLabel").textContent = "Export loaded";
+        renderWorlds();
+    });
 }
 
-function getTableRows(tableName) {
-    if (!dexieData || !dexieData.data || !dexieData.data.data) return [];
-    const table = dexieData.data.data.find(t => t.tableName === tableName);
-    return table ? table.rows || [] : [];
+function exportDexie() {
+    const prefix = prompt("Export filename prefix:", "worldMode");
+    smarhamrExport(prefix, dexieData);
 }
 
-// For now, we treat "worlds" as a conceptual subset of characters or a future table.
-// You can later map this to a dedicated worlds table if Perchance adds one.
 function renderWorlds() {
-    const list = document.getElementById('worldList');
-    const rows = getTableRows('characters'); // placeholder: worlds-as-characters
+    const list = document.getElementById("worldList");
+    const rows = smarhamrGetRows(dexieData, "characters"); // worlds-as-characters placeholder
+
     if (!rows.length) {
-        list.innerHTML = '<p><em>No world-like assets in Dexie.</em></p>';
+        list.innerHTML = "<p><em>No worlds found.</em></p>";
         return;
     }
-    list.innerHTML = '';
-    rows.forEach((row, idx) => {
-        const btn = document.createElement('button');
-        btn.className = 'button button-small mb-10';
-        btn.textContent = row.name || `World #${idx + 1}`;
+
+    list.innerHTML = "";
+    rows.forEach(row => {
+        const btn = document.createElement("button");
+        btn.className = "button button-small mb-10";
+        btn.textContent = row.name || "Unnamed World";
         btn.onclick = () => selectWorld(row);
         list.appendChild(btn);
     });
@@ -142,19 +132,14 @@ function renderWorlds() {
 
 function selectWorld(row) {
     currentWorld = row;
-    document.getElementById('rootWorldInfo').textContent =
-        `World: ${row.name || 'Unnamed'} (model: ${row.modelName || 'unknown'})`;
-}
-
-function createNewWorld() {
-    alert('TODO: Implement world asset creation and insertion into Dexie.');
+    document.getElementById("rootWorldInfo").textContent =
+        `World: ${row.name || "Unnamed"} (model: ${row.modelName})`;
 }
 
 function saveThread() {
-    alert('TODO: Implement world-rooted thread creation and saving into Dexie.');
+    alert("TODO: Implement world-thread saving.");
 }
 </script>
 
 </body>
 </html>
-
