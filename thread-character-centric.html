@@ -10,7 +10,7 @@
 
 <div class="flex" style="height:100vh;">
 
-    <!-- LEFT PANEL: Character Selection + Import/Reset -->
+    <!-- LEFT PANEL -->
     <div class="panel" style="width:320px; margin:0; border-radius:0; overflow-y:auto;">
         <h2>Character‑Centric Mode</h2>
         <p>Root threads in character assets.</p>
@@ -20,25 +20,25 @@
 
         <input type="file" id="dexieFile" accept=".json" />
 
-        <button class="button mt-10" onclick="loadDexieExport()">
+        <button class="button mt-10" onclick="importDexie()">
             Load Export (JSON)
         </button>
 
-        <button class="button mt-10" onclick="loadScratchDexie()">
+        <button class="button mt-10" onclick="resetScratch()">
             Reset to Scratch
+        </button>
+
+        <button class="button mt-10" onclick="exportDexie()">
+            Export Dexie (gzip)
         </button>
 
         <h3 class="mt-20">Characters</h3>
         <div id="characterList">
             <p><em>No characters loaded yet.</em></p>
         </div>
-
-        <button class="button mt-20" onclick="createNewCharacter()">
-            Create New Character (scratch-only placeholder)
-        </button>
     </div>
 
-    <!-- RIGHT PANEL: Thread Builder -->
+    <!-- RIGHT PANEL -->
     <div class="flex column scroll" style="flex:1; padding:20px;">
 
         <div class="panel">
@@ -48,17 +48,17 @@
 
         <div class="panel">
             <h3>Thread Lore</h3>
-            <textarea id="threadLore" placeholder="Thread-specific lore goes here..."></textarea>
+            <textarea id="threadLore"></textarea>
         </div>
 
         <div class="panel">
             <h3>Thread Memory</h3>
-            <textarea id="threadMemory" placeholder="Thread-specific memory goes here..."></textarea>
+            <textarea id="threadMemory"></textarea>
         </div>
 
         <div class="panel">
             <h3>Thread Messages</h3>
-            <textarea id="threadMessages" placeholder="Message history will appear here..."></textarea>
+            <textarea id="threadMessages"></textarea>
         </div>
 
         <button class="button mt-20" onclick="saveThread()">
@@ -69,65 +69,57 @@
 
 </div>
 
+<script src="smarhamr-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+
 <script>
 let dexieData = null;
 let currentCharacter = null;
 
-window.addEventListener('load', () => {
-    loadScratchDexie();
+window.addEventListener("load", async () => {
+    dexieData = await smarhamrLoadScratch();
+    document.getElementById("dataSourceLabel").textContent = "Scratch Dexie loaded";
+    renderCharacters();
 });
 
-async function loadScratchDexie() {
-    try {
-        const res = await fetch('dexie-scratch.json');
-        dexieData = await res.json();
-        document.getElementById('dataSourceLabel').textContent = 'Scratch Dexie loaded';
+function resetScratch() {
+    smarhamrLoadScratch().then(data => {
+        dexieData = data;
+        document.getElementById("dataSourceLabel").textContent = "Scratch Dexie loaded";
         renderCharacters();
-    } catch (e) {
-        document.getElementById('dataSourceLabel').textContent = 'Failed to load scratch Dexie';
-        console.error(e);
-    }
+    });
 }
 
-function loadDexieExport() {
-    const input = document.getElementById('dexieFile');
-    if (!input.files || !input.files[0]) {
-        alert('Select a JSON export file first.');
-        return;
-    }
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = e => {
-        try {
-            dexieData = JSON.parse(e.target.result);
-            document.getElementById('dataSourceLabel').textContent = 'Export loaded: ' + file.name;
-            renderCharacters();
-        } catch (err) {
-            alert('Invalid JSON export.');
-            console.error(err);
-        }
-    };
-    reader.readAsText(file);
+function importDexie() {
+    const file = document.getElementById("dexieFile").files[0];
+    if (!file) return alert("Choose a JSON file first.");
+
+    smarhamrLoadExport(file, data => {
+        dexieData = data;
+        document.getElementById("dataSourceLabel").textContent = "Export loaded";
+        renderCharacters();
+    });
 }
 
-function getTableRows(tableName) {
-    if (!dexieData || !dexieData.data || !dexieData.data.data) return [];
-    const table = dexieData.data.data.find(t => t.tableName === tableName);
-    return table ? table.rows || [] : [];
+function exportDexie() {
+    const prefix = prompt("Export filename prefix:", "characterMode");
+    smarhamrExport(prefix, dexieData);
 }
 
 function renderCharacters() {
-    const list = document.getElementById('characterList');
-    const rows = getTableRows('characters');
+    const list = document.getElementById("characterList");
+    const rows = smarhamrGetRows(dexieData, "characters");
+
     if (!rows.length) {
-        list.innerHTML = '<p><em>No characters in Dexie.</em></p>';
+        list.innerHTML = "<p><em>No characters found.</em></p>";
         return;
     }
-    list.innerHTML = '';
-    rows.forEach((row, idx) => {
-        const btn = document.createElement('button');
-        btn.className = 'button button-small mb-10';
-        btn.textContent = row.name || `Character #${idx + 1}`;
+
+    list.innerHTML = "";
+    rows.forEach(row => {
+        const btn = document.createElement("button");
+        btn.className = "button button-small mb-10";
+        btn.textContent = row.name || "Unnamed Character";
         btn.onclick = () => selectCharacter(row);
         list.appendChild(btn);
     });
@@ -135,19 +127,14 @@ function renderCharacters() {
 
 function selectCharacter(row) {
     currentCharacter = row;
-    document.getElementById('rootAssetInfo').textContent =
-        `Character: ${row.name || 'Unnamed'} (model: ${row.modelName || 'unknown'})`;
-}
-
-function createNewCharacter() {
-    alert('TODO: Implement character creation and insertion into Dexie.');
+    document.getElementById("rootAssetInfo").textContent =
+        `Character: ${row.name || "Unnamed"} (model: ${row.modelName})`;
 }
 
 function saveThread() {
-    alert('TODO: Implement thread creation and saving into Dexie.');
+    alert("TODO: Implement thread saving.");
 }
 </script>
 
 </body>
 </html>
-
