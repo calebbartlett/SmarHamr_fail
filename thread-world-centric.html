@@ -10,22 +10,31 @@
 
 <div class="flex" style="height:100vh;">
 
-    <!-- LEFT PANEL: World Selection -->
-    <div class="panel" style="width:300px; margin:0; border-radius:0; overflow-y:auto;">
+    <!-- LEFT PANEL: World Selection + Import/Reset -->
+    <div class="panel" style="width:320px; margin:0; border-radius:0; overflow-y:auto;">
         <h2>World‑Centric Mode</h2>
-        <p>Select a world asset to root a new thread.</p>
+        <p>Root threads in world assets.</p>
 
+        <h3 class="mt-10">Data Source</h3>
+        <p id="dataSourceLabel"><em>Loading scratch Dexie…</em></p>
+
+        <input type="file" id="dexieFile" accept=".json" />
+
+        <button class="button mt-10" onclick="loadDexieExport()">
+            Load Export (JSON)
+        </button>
+
+        <button class="button mt-10" onclick="loadScratchDexie()">
+            Reset to Scratch
+        </button>
+
+        <h3 class="mt-20">Worlds</h3>
         <div id="worldList">
-            <!-- Dynamically populated later -->
             <p><em>No worlds loaded yet.</em></p>
         </div>
 
-        <button class="button mt-20" onclick="loadWorldAssets()">
-            Load World Assets
-        </button>
-
-        <button class="button mt-10" onclick="createNewWorld()">
-            Create New World
+        <button class="button mt-20" onclick="createNewWorld()">
+            Create New World (placeholder)
         </button>
     </div>
 
@@ -58,7 +67,7 @@
         </div>
 
         <button class="button mt-20" onclick="saveThread()">
-            Save Thread
+            Save Thread (placeholder)
         </button>
 
     </div>
@@ -66,22 +75,86 @@
 </div>
 
 <script>
-/* ---------------------------------------------------------
-   Placeholder JS — You will replace this with Dexie logic
---------------------------------------------------------- */
+let dexieData = null;
+let currentWorld = null;
 
-function loadWorldAssets() {
-    alert("TODO: Load world assets from Dexie or JSON export.");
+window.addEventListener('load', () => {
+    loadScratchDexie();
+});
+
+async function loadScratchDexie() {
+    try {
+        const res = await fetch('dexie-scratch.json');
+        dexieData = await res.json();
+        document.getElementById('dataSourceLabel').textContent = 'Scratch Dexie loaded';
+        renderWorlds();
+    } catch (e) {
+        document.getElementById('dataSourceLabel').textContent = 'Failed to load scratch Dexie';
+        console.error(e);
+    }
+}
+
+function loadDexieExport() {
+    const input = document.getElementById('dexieFile');
+    if (!input.files || !input.files[0]) {
+        alert('Select a JSON export file first.');
+        return;
+    }
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            dexieData = JSON.parse(e.target.result);
+            document.getElementById('dataSourceLabel').textContent = 'Export loaded: ' + file.name;
+            renderWorlds();
+        } catch (err) {
+            alert('Invalid JSON export.');
+            console.error(err);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function getTableRows(tableName) {
+    if (!dexieData || !dexieData.data || !dexieData.data.data) return [];
+    const table = dexieData.data.data.find(t => t.tableName === tableName);
+    return table ? table.rows || [] : [];
+}
+
+// For now, we treat "worlds" as a conceptual subset of characters or a future table.
+// You can later map this to a dedicated worlds table if Perchance adds one.
+function renderWorlds() {
+    const list = document.getElementById('worldList');
+    const rows = getTableRows('characters'); // placeholder: worlds-as-characters
+    if (!rows.length) {
+        list.innerHTML = '<p><em>No world-like assets in Dexie.</em></p>';
+        return;
+    }
+    list.innerHTML = '';
+    rows.forEach((row, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'button button-small mb-10';
+        btn.textContent = row.name || `World #${idx + 1}`;
+        btn.onclick = () => selectWorld(row);
+        list.appendChild(btn);
+    });
+}
+
+function selectWorld(row) {
+    currentWorld = row;
+    document.getElementById('rootWorldInfo').textContent =
+        `World: ${row.name || 'Unnamed'} (model: ${row.modelName || 'unknown'})`;
 }
 
 function createNewWorld() {
-    alert("TODO: Open world creation UI.");
+    alert('TODO: Implement world asset creation and insertion into Dexie.');
 }
 
 function saveThread() {
-    alert("TODO: Save thread to Dexie or export JSON.");
+    alert('TODO: Implement world-rooted thread creation and saving into Dexie.');
 }
 </script>
 
 </body>
 </html>
+
