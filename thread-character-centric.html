@@ -10,22 +10,31 @@
 
 <div class="flex" style="height:100vh;">
 
-    <!-- LEFT PANEL: Character Selection -->
-    <div class="panel" style="width:300px; margin:0; border-radius:0; overflow-y:auto;">
+    <!-- LEFT PANEL: Character Selection + Import/Reset -->
+    <div class="panel" style="width:320px; margin:0; border-radius:0; overflow-y:auto;">
         <h2>Character‑Centric Mode</h2>
-        <p>Select a character asset to root a new thread.</p>
+        <p>Root threads in character assets.</p>
 
+        <h3 class="mt-10">Data Source</h3>
+        <p id="dataSourceLabel"><em>Loading scratch Dexie…</em></p>
+
+        <input type="file" id="dexieFile" accept=".json" />
+
+        <button class="button mt-10" onclick="loadDexieExport()">
+            Load Export (JSON)
+        </button>
+
+        <button class="button mt-10" onclick="loadScratchDexie()">
+            Reset to Scratch
+        </button>
+
+        <h3 class="mt-20">Characters</h3>
         <div id="characterList">
-            <!-- Dynamically populated later -->
             <p><em>No characters loaded yet.</em></p>
         </div>
 
-        <button class="button mt-20" onclick="loadCharacterAssets()">
-            Load Character Assets
-        </button>
-
-        <button class="button mt-10" onclick="createNewCharacter()">
-            Create New Character
+        <button class="button mt-20" onclick="createNewCharacter()">
+            Create New Character (scratch-only placeholder)
         </button>
     </div>
 
@@ -33,7 +42,7 @@
     <div class="flex column scroll" style="flex:1; padding:20px;">
 
         <div class="panel">
-            <h3>Thread Root Asset</h3>
+            <h3>Thread Root Character</h3>
             <p id="rootAssetInfo"><em>No character selected.</em></p>
         </div>
 
@@ -53,7 +62,7 @@
         </div>
 
         <button class="button mt-20" onclick="saveThread()">
-            Save Thread
+            Save Thread (placeholder)
         </button>
 
     </div>
@@ -61,22 +70,84 @@
 </div>
 
 <script>
-/* ---------------------------------------------------------
-   Placeholder JS — You will replace this with Dexie logic
---------------------------------------------------------- */
+let dexieData = null;
+let currentCharacter = null;
 
-function loadCharacterAssets() {
-    alert("TODO: Load character assets from Dexie or JSON export.");
+window.addEventListener('load', () => {
+    loadScratchDexie();
+});
+
+async function loadScratchDexie() {
+    try {
+        const res = await fetch('dexie-scratch.json');
+        dexieData = await res.json();
+        document.getElementById('dataSourceLabel').textContent = 'Scratch Dexie loaded';
+        renderCharacters();
+    } catch (e) {
+        document.getElementById('dataSourceLabel').textContent = 'Failed to load scratch Dexie';
+        console.error(e);
+    }
+}
+
+function loadDexieExport() {
+    const input = document.getElementById('dexieFile');
+    if (!input.files || !input.files[0]) {
+        alert('Select a JSON export file first.');
+        return;
+    }
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            dexieData = JSON.parse(e.target.result);
+            document.getElementById('dataSourceLabel').textContent = 'Export loaded: ' + file.name;
+            renderCharacters();
+        } catch (err) {
+            alert('Invalid JSON export.');
+            console.error(err);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function getTableRows(tableName) {
+    if (!dexieData || !dexieData.data || !dexieData.data.data) return [];
+    const table = dexieData.data.data.find(t => t.tableName === tableName);
+    return table ? table.rows || [] : [];
+}
+
+function renderCharacters() {
+    const list = document.getElementById('characterList');
+    const rows = getTableRows('characters');
+    if (!rows.length) {
+        list.innerHTML = '<p><em>No characters in Dexie.</em></p>';
+        return;
+    }
+    list.innerHTML = '';
+    rows.forEach((row, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'button button-small mb-10';
+        btn.textContent = row.name || `Character #${idx + 1}`;
+        btn.onclick = () => selectCharacter(row);
+        list.appendChild(btn);
+    });
+}
+
+function selectCharacter(row) {
+    currentCharacter = row;
+    document.getElementById('rootAssetInfo').textContent =
+        `Character: ${row.name || 'Unnamed'} (model: ${row.modelName || 'unknown'})`;
 }
 
 function createNewCharacter() {
-    alert("TODO: Open character creation UI.");
+    alert('TODO: Implement character creation and insertion into Dexie.');
 }
 
 function saveThread() {
-    alert("TODO: Save thread to Dexie or export JSON.");
+    alert('TODO: Implement thread creation and saving into Dexie.');
 }
 </script>
 
 </body>
 </html>
+
