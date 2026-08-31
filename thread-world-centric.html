@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SmarHamr — World‑Centric Mode</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+
+<body>
+
+<div class="flex" style="height:100vh;">
+
+    <!-- LEFT PANEL: World Selection -->
+    <div class="panel" style="width:300px; margin:0; border-radius:0; overflow-y:auto;">
+        <h2>World‑Centric Mode</h2>
+        <p>Select a world asset to root a new thread.</p>
+
+        <div id="worldList">
+            <!-- Dynamically populated later -->
+            <p><em>No worlds loaded yet.</em></p>
+        </div>
+
+        <button class="button mt-20" onclick="loadWorldAssets()">
+            Load World Assets
+        </button>
+
+        <button class="button mt-10" onclick="createNewWorld()">
+            Create New World
+        </button>
+    </div>
+
+    <!-- RIGHT PANEL: Thread Builder -->
+    <div class="flex column scroll" style="flex:1; padding:20px;">
+
+        <div class="panel">
+            <h3>Thread Root World</h3>
+            <p id="rootWorldInfo"><em>No world selected.</em></p>
+        </div>
+
+        <div class="panel">
+            <h3>Global World Lore</h3>
+            <textarea id="worldLore" placeholder="World asset lore goes here..."></textarea>
+        </div>
+
+        <div class="panel">
+            <h3>Thread‑Specific Lore</h3>
+            <textarea id="threadLore" placeholder="Thread-specific lore goes here..."></textarea>
+        </div>
+
+        <div class="panel">
+            <h3>Thread Memory</h3>
+            <textarea id="threadMemory" placeholder="Thread-specific memory goes here..."></textarea>
+        </div>
+
+        <div class="panel">
+            <h3>Thread Messages</h3>
+            <textarea id="threadMessages" placeholder="Message history will appear here..."></textarea>
+        </div>
+
+        <button class="button mt-20" onclick="saveThread()">
+            Save Thread
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   Placeholder JS — You will replace this with Dexie logic
+--------------------------------------------------------- */
+
+function loadWorldAssets() {
+    alert("TODO: Load world assets from Dexie or JSON export.");
+}
+
+function createNewWorld() {
+    alert("TODO: Open world creation UI.");
+}
+
+function saveThread() {
+    alert("TODO: Save thread to Dexie or export JSON.");
+}
+</script>
+
+</body>
+</html>
