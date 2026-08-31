@@ -10,15 +10,22 @@
 
 <div class="flex" style="height:100vh;">
 
-    <!-- LEFT PANEL: Dexie Table List -->
-    <div class="panel" style="width:300px; margin:0; border-radius:0; overflow-y:auto;">
+    <!-- LEFT PANEL: Dexie Table List + Import/Reset -->
+    <div class="panel" style="width:320px; margin:0; border-radius:0; overflow-y:auto;">
         <h2>Dexie Editor</h2>
-        <p>Load a Dexie export and inspect all tables.</p>
+        <p>Inspect and edit the raw Dexie structure.</p>
 
-        <input type="file" id="dexieFile" accept=".json,.gz" />
+        <h3 class="mt-10">Data Source</h3>
+        <p id="dataSourceLabel"><em>Loading scratch Dexie…</em></p>
+
+        <input type="file" id="dexieFile" accept=".json" />
 
         <button class="button mt-10" onclick="loadDexieExport()">
-            Load Dexie Export
+            Load Export (JSON)
+        </button>
+
+        <button class="button mt-10" onclick="loadScratchDexie()">
+            Reset to Scratch
         </button>
 
         <h3 class="mt-20">Tables</h3>
@@ -48,7 +55,7 @@
                 placeholder="Select a row to view/edit JSON..."></textarea>
 
             <button class="button mt-10" onclick="applyRowEdit()">
-                Apply Row Edit
+                Apply Row Edit (in-memory only)
             </button>
         </div>
 
@@ -61,34 +68,149 @@
 </div>
 
 <script>
-/* ---------------------------------------------------------
-   Placeholder JS — You will replace this with real Dexie logic
---------------------------------------------------------- */
-
 let dexieData = null;
 let currentTable = null;
+let currentRows = [];
 let currentRowIndex = null;
 
+window.addEventListener('load', () => {
+    loadScratchDexie();
+});
+
+async function loadScratchDexie() {
+    try {
+        const res = await fetch('dexie-scratch.json');
+        dexieData = await res.json();
+        document.getElementById('dataSourceLabel').textContent = 'Scratch Dexie loaded';
+        renderTables();
+    } catch (e) {
+        document.getElementById('dataSourceLabel').textContent = 'Failed to load scratch Dexie';
+        console.error(e);
+    }
+}
+
 function loadDexieExport() {
-    alert("TODO: Parse Dexie JSON or JSON.GZ and populate table list.");
+    const input = document.getElementById('dexieFile');
+    if (!input.files || !input.files[0]) {
+        alert('Select a JSON export file first.');
+        return;
+    }
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            dexieData = JSON.parse(e.target.result);
+            document.getElementById('dataSourceLabel').textContent = 'Export loaded: ' + file.name;
+            renderTables();
+        } catch (err) {
+            alert('Invalid JSON export.');
+            console.error(err);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function getTables() {
+    if (!dexieData || !dexieData.data || !dexieData.data.tables) return [];
+    return dexieData.data.tables;
+}
+
+function getTableRowsByName(tableName) {
+    if (!dexieData || !dexieData.data || !dexieData.data.data) return [];
+    const table = dexieData.data.data.find(t => t.tableName === tableName);
+    return table ? table.rows || [] : [];
+}
+
+function renderTables() {
+    const list = document.getElementById('tableList');
+    const tables = getTables();
+    if (!tables.length) {
+        list.innerHTML = '<p><em>No tables in Dexie.</em></p>';
+        return;
+    }
+    list.innerHTML = '';
+    tables.forEach(t => {
+        const btn = document.createElement('button');
+        btn.className = 'button button-small mb-10';
+        btn.textContent = `${t.name} (${t.rowCount} rows)`;
+        btn.onclick = () => selectTable(t.name);
+        list.appendChild(btn);
+    });
 }
 
 function selectTable(tableName) {
-    alert("TODO: Display rows for table: " + tableName);
+    currentTable = tableName;
+    currentRows = getTableRowsByName(tableName);
+    currentRowIndex = null;
+    document.getElementById('selectedTableName').textContent =
+        `Table: ${tableName} (${currentRows.length} rows)`;
+    renderRows();
+    document.getElementById('rowJson').value = '';
+}
+
+function renderRows() {
+    const container = document.getElementById('rowList');
+    if (!currentRows.length) {
+        container.innerHTML = '<p><em>No rows in this table.</em></p>';
+        return;
+    }
+    container.innerHTML = '';
+    currentRows.forEach((row, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'button button-small mb-10';
+        btn.textContent = `Row #${idx} (id: ${row.id ?? 'n/a'})`;
+        btn.onclick = () => selectRow(idx);
+        container.appendChild(btn);
+    });
 }
 
 function selectRow(index) {
-    alert("TODO: Load row JSON for editing.");
+    currentRowIndex = index;
+    const row = currentRows[index];
+    document.getElementById('rowJson').value = JSON.stringify(row, null, 2);
 }
 
 function applyRowEdit() {
-    alert("TODO: Apply edited JSON back into Dexie structure.");
+    if (currentRowIndex === null) {
+        alert('Select a row first.');
+        return;
+    }
+    try {
+        const text = document.getElementById('rowJson').value;
+        const updated = JSON.parse(text);
+        currentRows[currentRowIndex] = updated;
+
+        // Write back into dexieData
+        const dataTables = dexieData.data.data;
+        const table = dataTables.find(t => t.tableName === currentTable);
+        if (table) {
+            table.rows = currentRows;
+        }
+
+        alert('Row updated in memory.');
+    } catch (e) {
+        alert('Invalid JSON. Edit failed.');
+        console.error(e);
+    }
 }
 
 function exportDexieJson() {
-    alert("TODO: Rebuild Dexie JSON and trigger download.");
+    if (!dexieData) {
+        alert('No Dexie data to export.');
+        return;
+    }
+    const blob = new Blob([JSON.stringify(dexieData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dexie-export.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 </script>
 
 </body>
 </html>
+
