@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SmarHamr FAQ</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        background: #fff;
+        line-height: 1.6;
+    }
+
+    h1 {
+        margin-top: 0;
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+    }
+
+    h3 {
+        margin-top: 1.5rem;
+        font-size: 1.2rem;
+    }
+
+    .fact {
+        background: #f0f0f0;
+        padding: 12px;
+        border-left: 4px solid #444;
+        margin-bottom: 12px;
+        border-radius: 4px;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>Understanding Perchance Structure</h1>
+<p>
+    These short statements explain how Perchance AI actually organizes characters,
+    worlds, threads, lore, and memory. Knowing this helps you use SmarHamr effectively.
+</p>
+
+<h3>Characters are assets.</h3>
+<div class="fact">
+    Characters are reusable definitions.  
+    They do not store memories.  
+    They do not store lore.  
+    They do not store conversations.
+</div>
+
+<h3>Threads are sessions.</h3>
+<div class="fact">
+    A thread is where the conversation happens.  
+    Threads store messages, summaries, memories, and user history.  
+    Threads also store thread‑specific lore.
+</div>
+
+<h3>Threads are rooted in assets.</h3>
+<div class="fact">
+    A thread begins by selecting a character or a world.  
+    The asset becomes the “root” of the thread.  
+    The thread inherits the asset’s instructions and context.
+</div>
+
+<h3>Lore is thread‑specific.</h3>
+<div class="fact">
+    Lore does not travel with characters.  
+    Lore belongs to the thread.  
+    Each thread has its own lore text.
+</div>
+
+<h3>Memories are thread‑specific.</h3>
+<div class="fact">
+    Memories do not travel with characters.  
+    Memories belong to the thread.  
+    Each thread has its own memory list.
+</div>
+
+<h3>Worlds are assets.</h3>
+<div class="fact">
+    A world defines global lore, rules, tone, and culture.  
+    Threads can be rooted in a world asset.  
+    Worlds do not store thread memories.
+</div>
+
+<h3>Assets define. Threads run.</h3>
+<div class="fact">
+    Assets = definitions.  
+    Threads = runtime containers.  
+    Dexie = the database that stores both.
+</div>
+
+<h3>SmarHamr helps you work with both.</h3>
+<div class="fact">
+    Character‑Centric Mode edits character‑rooted threads.  
+    World‑Centric Mode edits world‑rooted threads.  
+    Dexie Editor edits the raw database.
+</div>
+
+</body>
+</html>
