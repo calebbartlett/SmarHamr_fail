@@ -1,0 +1,227 @@
+/* ---------------------------------------------------------
+   SmarHamr Global UI Styles
+   Applies to all modes: character-centric, world-centric,
+   dexie-editor, asset editors, templates, etc.
+--------------------------------------------------------- */
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    color: #222;
+}
+
+/* ---------------------------------------------------------
+   Layout Helpers
+--------------------------------------------------------- */
+
+.flex {
+    display: flex;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+}
+
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.scroll {
+    overflow-y: auto;
+}
+
+/* ---------------------------------------------------------
+   Panels / Containers
+--------------------------------------------------------- */
+
+.panel {
+    background: #fff;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 0 4px rgba(0,0,0,0.1);
+}
+
+.panel-header {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* ---------------------------------------------------------
+   Buttons
+--------------------------------------------------------- */
+
+.button {
+    padding: 12px 16px;
+    background: #444;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s ease;
+}
+
+.button:hover {
+    background: #555;
+}
+
+.button-small {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+}
+
+.button-danger {
+    background: #b33;
+}
+
+.button-danger:hover {
+    background: #c44;
+}
+
+/* ---------------------------------------------------------
+   Inputs
+--------------------------------------------------------- */
+
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* ---------------------------------------------------------
+   Tables
+--------------------------------------------------------- */
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+}
+
+.table th,
+.table td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+.table th {
+    background: #eee;
+    font-weight: bold;
+}
+
+/* ---------------------------------------------------------
+   Tags / Labels
+--------------------------------------------------------- */
+
+.tag {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #ddd;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    margin-right: 6px;
+}
+
+.tag-primary {
+    background: #444;
+    color: #fff;
+}
+
+.tag-world {
+    background: #2a7;
+    color: #fff;
+}
+
+.tag-character {
+    background: #27a;
+    color: #fff;
+}
+
+.tag-thread {
+    background: #a72;
+    color: #fff;
+}
+
+/* ---------------------------------------------------------
+   Code Blocks
+--------------------------------------------------------- */
+
+.code-block {
+    background: #222;
+    color: #eee;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    margin-bottom: 16px;
+}
+
+/* ---------------------------------------------------------
+   Utility Spacing
+--------------------------------------------------------- */
+
+.mt-10 { margin-top: 10px; }
+.mt-20 { margin-top: 20px; }
+.mb-10 { margin-bottom: 10px; }
+.mb-20 { margin-bottom: 20px; }
+.p-10 { padding: 10px; }
+.p-20 { padding: 20px; }
+
+/* ---------------------------------------------------------
+   Headers
+--------------------------------------------------------- */
+
+h1, h2, h3 {
+    margin-top: 0;
+    color: #222;
+}
+
+h1 {
+    font-size: 2rem;
+}
+
+h2 {
+    font-size: 1.5rem;
+}
+
+h3 {
+    font-size: 1.2rem;
+}
+
+/* ---------------------------------------------------------
+   Links
+--------------------------------------------------------- */
+
+a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
