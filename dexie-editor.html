@@ -2,95 +2,99 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>SmarHamr — Dexie Editor (Guru Mode)</title>
+<title>SmarHamr — Dexie Editor</title>
 <link rel="stylesheet" href="ui.css">
 </head>
-
 <body>
 
-<!-- ============================================================
-     Unified Import / Export Toolbar
-============================================================ -->
-<div class="panel" style="margin:0; border-radius:0;">
-    <h2>SmarHamr — Dexie Editor</h2>
+<div id="topbar">
+    <div id="currentFileName">Scratch Dexie</div>
 
-    <div class="row mb-10">
-        <input type="file" id="dexieFile" accept=".json,.json.gz,.gz" style="flex:1;">
-
-        <button class="button ml-10" onclick="importDexie()">Load Export</button>
-        <button class="button ml-10" onclick="resetScratch()">Reset Scratch</button>
-        <button class="button ml-10" onclick="exportDexie()">Export</button>
+    <div id="modeButtons">
+        <button class="modeBtn" id="ccModeBtn" onclick="goAssets()">Character‑Centric</button>
+        <button class="modeBtn" id="wcModeBtn" onclick="goAssets()">World‑Centric</button>
+        <button class="modeBtn active" id="deModeBtn">Dexie Editor</button>
     </div>
 
-    <p id="dataSourceLabel"><em>Loading scratch Dexie…</em></p>
+    <div id="branding">SmarHamr by yggdrasil75</div>
 </div>
 
-<div class="flex" style="height:calc(100vh - 160px);">
+<div class="app-root">
+    <div class="left-nav">
+        <div class="panel">
+            <h3>File Management</h3>
+            <input type="file" id="dexieFile" accept=".json,.json.gz,.gz">
+            <button onclick="importDexie()">Load Export</button>
+            <button onclick="resetScratch()">Reset Scratch</button>
+            <button onclick="exportDexie()">Export</button>
+            <p id="dataSourceLabel"><em>Scratch not yet loaded.</em></p>
+        </div>
 
-    <!-- LEFT PANEL -->
-    <div class="panel" style="width:320px; margin:0; border-radius:0; overflow-y:auto;">
-        <h3>Tables</h3>
-        <div id="tableList">
-            <p><em>No tables loaded.</em></p>
+        <div class="panel">
+            <h3>Tables</h3>
+            <div id="tableList">
+                <p><em>No tables loaded.</em></p>
+            </div>
         </div>
     </div>
 
-    <!-- RIGHT PANEL -->
-    <div class="flex column scroll" style="flex:1; padding:20px;">
-
+    <div class="workspace">
         <div class="panel">
-            <h3>Selected Table</h3>
-            <p id="selectedTableName"><em>No table selected.</em></p>
+            <h3 id="selectedTableName"><em>No table selected.</em></h3>
         </div>
 
         <div class="panel">
             <h3>Rows</h3>
             <div id="rowList">
-                <p><em>No rows to display.</em></p>
+                <p><em>No rows.</em></p>
             </div>
         </div>
 
         <div class="panel">
             <h3>Row JSON</h3>
-            <textarea id="rowJson" class="code-block" style="min-height:200px;"></textarea>
-
-            <button class="button mt-10" onclick="applyRowEdit()">Apply Row Edit</button>
+            <textarea id="rowJson"></textarea>
+            <button onclick="applyRowEdit()">Apply Row Edit</button>
         </div>
-
     </div>
-
 </div>
 
-<script src="smarhamr-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-
+<script src="smarhamr-config.js"></script>
 <script>
-let dexieData = null;
 let currentTable = null;
 let currentRows = [];
 let currentRowIndex = null;
 
 window.addEventListener("load", async () => {
-    dexieData = await smarhamrLoadScratch();
-    document.getElementById("dataSourceLabel").textContent = "Scratch Dexie loaded";
+    if (!dexieData && SmarHamrConfig.autoLoadScratchOnStartup) {
+        await smarhamrLoadScratch();
+        document.getElementById("dataSourceLabel").textContent = "Scratch Dexie loaded";
+    } else {
+        updateCurrentFileNameUI();
+    }
     renderTables();
 });
 
-function resetScratch() {
-    smarhamrLoadScratch().then(data => {
-        dexieData = data;
-        document.getElementById("dataSourceLabel").textContent = "Scratch Dexie loaded";
-        renderTables();
-    });
+function goAssets() {
+    window.location.href = "smarhamr-assets.html";
 }
 
 function importDexie() {
     const file = document.getElementById("dexieFile").files[0];
-    if (!file) return alert("Choose a .json or .json.gz file first.");
+    if (!file) {
+        alert("Choose a .json or .json.gz file first.");
+        return;
+    }
 
     smarhamrLoadExport(file, data => {
-        dexieData = data;
         document.getElementById("dataSourceLabel").textContent = `Loaded: ${file.name}`;
+        renderTables();
+    });
+}
+
+function resetScratch() {
+    smarhamrLoadScratch().then(() => {
+        document.getElementById("dataSourceLabel").textContent = "Scratch Dexie loaded";
         renderTables();
     });
 }
@@ -102,8 +106,12 @@ function exportDexie() {
 
 function renderTables() {
     const list = document.getElementById("tableList");
-    const tables = dexieData.data.tables;
+    if (!dexieData) {
+        list.innerHTML = "<p><em>No tables loaded.</em></p>";
+        return;
+    }
 
+    const tables = dexieData.data.tables || [];
     if (!tables.length) {
         list.innerHTML = "<p><em>No tables found.</em></p>";
         return;
@@ -112,7 +120,6 @@ function renderTables() {
     list.innerHTML = "";
     tables.forEach(t => {
         const btn = document.createElement("button");
-        btn.className = "button button-small mb-10";
         btn.textContent = `${t.name} (${t.rowCount} rows)`;
         btn.onclick = () => selectTable(t.name);
         list.appendChild(btn);
@@ -142,7 +149,6 @@ function renderRows() {
     container.innerHTML = "";
     currentRows.forEach((row, idx) => {
         const btn = document.createElement("button");
-        btn.className = "button button-small mb-10";
         btn.textContent = `Row #${idx}`;
         btn.onclick = () => selectRow(idx);
         container.appendChild(btn);
@@ -156,7 +162,10 @@ function selectRow(index) {
 }
 
 function applyRowEdit() {
-    if (currentRowIndex === null) return alert("Select a row first.");
+    if (currentRowIndex === null) {
+        alert("Select a row first.");
+        return;
+    }
 
     try {
         const updated = JSON.parse(document.getElementById("rowJson").value);
@@ -168,6 +177,5 @@ function applyRowEdit() {
     }
 }
 </script>
-
 </body>
 </html>
