@@ -11,45 +11,44 @@
 <!-- ============================================================
      TOP BAR
      ============================================================ -->
-<div id="topBar">
-    <div id="currentFileName" class="filename-display">Scratch Dexie</div>
+<div id="topbar">
+    <div id="currentFileName">Scratch Dexie</div>
 
     <div id="modeButtons">
-        <button id="ccModeBtn" onclick="goCC()">CC Mode</button>
-        <button id="wcModeBtn" onclick="goWC()">WC Mode</button>
-        <button id="deModeBtn" onclick="goDexie()">Dexie Editor</button>
+        <button class="modeBtn" id="ccModeBtn" onclick="goCC()">CC Mode</button>
+        <button class="modeBtn" id="wcModeBtn" onclick="goWC()">WC Mode</button>
+        <button class="modeBtn" id="deModeBtn" onclick="goDexie()">Dexie Editor</button>
     </div>
 
-    <div id="fileButtons">
+    <div id="branding">SmarHamr Cockpit</div>
+</div>
+
+<!-- ============================================================
+     MAIN LAYOUT
+     ============================================================ -->
+<div class="app-root">
+
+    <!-- LEFT NAV -->
+    <div class="left-nav">
         <input type="file" id="dexieFile">
         <button onclick="smarhamrLoadExportFile('dexieFile')">Load Export</button>
         <button onclick="smarhamrResetScratch()">Reset Scratch</button>
         <button onclick="smarhamrSaveToMemory()">Save</button>
         <button onclick="smarhamrExportDexie()">Export</button>
-    </div>
-</div>
 
-<!-- ============================================================
-     LAYOUT: LEFT NAV + RIGHT PANELS
-     ============================================================ -->
-<div id="layout">
-    <!-- LEFT: Asset List -->
-    <div id="leftNav">
         <h3>Characters</h3>
-        <div id="assetList"></div>
+        <div id="assetList" class="asset-list"></div>
     </div>
 
-    <!-- RIGHT: Panels -->
-    <div id="workspace">
+    <!-- WORKSPACE -->
+    <div class="workspace">
 
-        <!-- Identity -->
-        <section id="identityPanel">
+        <div class="panel">
             <h3>Identity</h3>
             <pre id="identityView"></pre>
-        </section>
+        </div>
 
-        <!-- Behavior -->
-        <section id="behaviorPanel">
+        <div class="panel">
             <h3>Behavior</h3>
             <textarea id="roleInstruction"></textarea>
             <textarea id="generalWritingInstructions"></textarea>
@@ -61,56 +60,50 @@
             <input id="maxTokensPerMessage" type="number">
             <input id="textEmbeddingModelName" type="text">
             <button onclick="smarhamrSaveBehavior()">Save Behavior</button>
-        </section>
+        </div>
 
-        <!-- Prompting -->
-        <section id="promptingPanel">
+        <div class="panel">
             <h3>Prompting</h3>
             <textarea id="imagePromptPrefix"></textarea>
             <textarea id="imagePromptSuffix"></textarea>
             <textarea id="imagePromptTriggers"></textarea>
             <textarea id="messageInputPlaceholder"></textarea>
             <button onclick="smarhamrSavePrompting()">Save Prompting</button>
-        </section>
+        </div>
 
-        <!-- Visual -->
-        <section id="visualPanel">
+        <div class="panel">
             <h3>Visual</h3>
             <textarea id="avatar"></textarea>
             <textarea id="scene"></textarea>
             <textarea id="userCharacter"></textarea>
             <textarea id="systemCharacter"></textarea>
             <button onclick="smarhamrSaveVisual()">Save Visual</button>
-        </section>
+        </div>
 
-        <!-- Initial Messages -->
-        <section id="initialMessagesPanel">
+        <div class="panel">
             <h3>Initial Messages</h3>
             <textarea id="initialMessages"></textarea>
             <button onclick="smarhamrSaveInitialMessages()">Save Initial Messages</button>
-        </section>
+        </div>
 
-        <!-- Lore -->
-        <section id="lorePanel">
+        <div class="panel">
             <h3>Lore</h3>
             <textarea id="loreBookUrls"></textarea>
             <button onclick="smarhamrSaveLore()">Save Lore</button>
-        </section>
+        </div>
 
-        <!-- Custom Code -->
-        <section id="customCodePanel">
+        <div class="panel">
             <h3>Custom Code</h3>
             <textarea id="customCode"></textarea>
             <button onclick="smarhamrSaveCustomCode()">Save Custom Code</button>
-        </section>
+        </div>
 
-        <!-- Thread Builder -->
-        <section id="threadBuilderPanel">
+        <div class="panel">
             <h3>Thread Builder</h3>
             <textarea id="threadLore"></textarea>
             <textarea id="threadMemory"></textarea>
             <textarea id="threadMessages"></textarea>
-        </section>
+        </div>
 
     </div>
 </div>
@@ -126,14 +119,15 @@
 </div>
 
 <!-- ============================================================
-     MODULE SCRIPTS
+     MODULES
      ============================================================ -->
+<script src="pako.min.js"></script>
+<script src="smarhamr-config.js"></script>
 <script src="smarhamr-core.js"></script>
 <script src="smarhamr-file.js"></script>
 <script src="smarhamr-clipboard.js"></script>
 <script src="smarhamr-ui.js"></script>
 <script src="smarhamr-cc.js"></script>
-<script src="smarhamr-config.js"></script>
 
 <script>
     window.addEventListener("load", smarhamrInitCC);
