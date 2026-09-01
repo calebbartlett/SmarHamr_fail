@@ -1,0 +1,159 @@
+{
+  "modules": [
+    {
+      "name": "smarhamr-core.js",
+      "responsibility": "Global state + navigation",
+      "provides": [
+        "window.dexieData",
+        "window.currentFileName",
+        "window.selectedAssetId",
+        "window.selectedTableName",
+        "window.selectedRowId",
+        "goCC()",
+        "goWC()",
+        "goDexie()"
+      ],
+      "depends_on": []
+    },
+    {
+      "name": "smarhamr-file.js",
+      "responsibility": "File loading, scratch reset, memory save, gzip export",
+      "provides": [
+        "smarhamrLoadExportFile()",
+        "smarhamrResetScratch()",
+        "smarhamrSaveToMemory()",
+        "smarhamrExportDexie()"
+      ],
+      "depends_on": [
+        "smarhamr-core.js",
+        "smarhamr-ui.js"
+      ]
+    },
+    {
+      "name": "smarhamr-clipboard.js",
+      "responsibility": "Clipboard persistence + UI control",
+      "provides": [
+        "smarhamrLoadClipboard()",
+        "smarhamrSaveClipboard()",
+        "smarhamrSetClipboardOpen()",
+        "smarhamrInitClipboardEvents()"
+      ],
+      "depends_on": [
+        "smarhamr-core.js"
+      ]
+    },
+    {
+      "name": "smarhamr-ui.js",
+      "responsibility": "Shared UI helpers",
+      "provides": [
+        "smarhamrGet()",
+        "updateCurrentFileNameUI()",
+        "smarhamrSetActiveMode()",
+        "smarhamrInitUI()"
+      ],
+      "depends_on": [
+        "smarhamr-core.js"
+      ]
+    },
+    {
+      "name": "smarhamr-cc.js",
+      "responsibility": "Character‑Centric mode logic",
+      "provides": [
+        "smarhamrInitCC()",
+        "smarhamrRenderCCAssets()",
+        "smarhamrSelectCCAsset()",
+        "smarhamrHighlightCCAsset()",
+        "smarhamrPopulateIdentity()",
+        "smarhamrPopulateBehavior()",
+        "smarhamrSaveBehavior()",
+        "smarhamrPopulatePrompting()",
+        "smarhamrSavePrompting()",
+        "smarhamrPopulateVisual()",
+        "smarhamrSaveVisual()",
+        "smarhamrPopulateInitialMessages()",
+        "smarhamrSaveInitialMessages()",
+        "smarhamrPopulateLore()",
+        "smarhamrSaveLore()",
+        "smarhamrPopulateCustomCode()",
+        "smarhamrSaveCustomCode()",
+        "smarhamrPopulateThreadBuilder()"
+      ],
+      "depends_on": [
+        "smarhamr-core.js",
+        "smarhamr-ui.js",
+        "smarhamr-file.js",
+        "smarhamr-clipboard.js"
+      ]
+    },
+    {
+      "name": "smarhamr-wc.js",
+      "responsibility": "World‑Centric mode logic",
+      "provides": [
+        "smarhamrInitWC()",
+        "smarhamrRenderWCTables()",
+        "smarhamrSelectWCAsset()",
+        "smarhamrHighlightWCAsset()",
+        "smarhamrPopulateWCIdentity()",
+        "smarhamrPopulateWCBehavior()",
+        "smarhamrSaveWCBehavior()",
+        "smarhamrPopulateWCPrompting()",
+        "smarhamrSaveWCPrompting()",
+        "smarhamrPopulateWCVisual()",
+        "smarhamrSaveWCVisual()",
+        "smarhamrPopulateWCInitialMessages()",
+        "smarhamrSaveWCInitialMessages()",
+        "smarhamrPopulateWCLore()",
+        "smarhamrSaveWCLore()",
+        "smarhamrPopulateWCCustomCode()",
+        "smarhamrSaveWCCustomCode()"
+      ],
+      "depends_on": [
+        "smarhamr-core.js",
+        "smarhamr-ui.js",
+        "smarhamr-file.js",
+        "smarhamr-clipboard.js"
+      ]
+    },
+    {
+      "name": "smarhamr-dexie.js",
+      "responsibility": "Dexie Editor logic",
+      "provides": [
+        "smarhamrInitDexie()",
+        "smarhamrRenderTables()",
+        "smarhamrSelectTable()",
+        "smarhamrHighlightTable()",
+        "smarhamrRenderRows()",
+        "smarhamrSelectRow()",
+        "smarhamrHighlightRow()",
+        "smarhamrApplyRowEdit()",
+        "smarhamrExportModifiedDexie()"
+      ],
+      "depends_on": [
+        "smarhamr-core.js",
+        "smarhamr-ui.js",
+        "smarhamr-file.js",
+        "smarhamr-clipboard.js"
+      ]
+    }
+  ],
+  "architecture": {
+    "shared_modules": [
+      "smarhamr-core.js",
+      "smarhamr-file.js",
+      "smarhamr-clipboard.js",
+      "smarhamr-ui.js"
+    ],
+    "mode_modules": [
+      "smarhamr-cc.js",
+      "smarhamr-wc.js",
+      "smarhamr-dexie.js"
+    ],
+    "notes": [
+      "All modes now share a single source of truth for Dexie data and filename.",
+      "Clipboard logic is centralized and consistent across modes.",
+      "UI helpers prevent DOM errors and filename corruption.",
+      "File operations are unified, eliminating JSON export inconsistencies.",
+      "Each mode is now isolated, small, and easy to maintain."
+    ]
+  }
+}
