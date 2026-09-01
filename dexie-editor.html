@@ -8,61 +8,48 @@
 
 <body>
 
-<!-- ============================================================
-     TOP BAR
-     ============================================================ -->
-<div id="topBar">
-    <div id="currentFileName" class="filename-display">Scratch Dexie</div>
+<div id="topbar">
+    <div id="currentFileName">Scratch Dexie</div>
 
     <div id="modeButtons">
-        <button id="ccModeBtn" onclick="goCC()">CC Mode</button>
-        <button id="wcModeBtn" onclick="goWC()">WC Mode</button>
-        <button id="deModeBtn" onclick="goDexie()">Dexie Editor</button>
+        <button class="modeBtn" id="ccModeBtn" onclick="goCC()">CC Mode</button>
+        <button class="modeBtn" id="wcModeBtn" onclick="goWC()">WC Mode</button>
+        <button class="modeBtn" id="deModeBtn" onclick="goDexie()">Dexie Editor</button>
     </div>
 
-    <div id="fileButtons">
+    <div id="branding">SmarHamr Cockpit</div>
+</div>
+
+<div class="app-root">
+
+    <div class="left-nav">
         <input type="file" id="dexieFile">
         <button onclick="smarhamrLoadExportFile('dexieFile')">Load Export</button>
         <button onclick="smarhamrResetScratch()">Reset Scratch</button>
         <button onclick="smarhamrSaveToMemory()">Save</button>
         <button onclick="smarhamrExportDexie()">Export</button>
-    </div>
-</div>
 
-<!-- ============================================================
-     LAYOUT: LEFT NAV + RIGHT PANELS
-     ============================================================ -->
-<div id="layout">
-
-    <!-- LEFT: Table List -->
-    <div id="leftNav">
         <h3>Tables</h3>
-        <div id="tableList"></div>
+        <div id="tableList" class="asset-list"></div>
     </div>
 
-    <!-- RIGHT: Rows + JSON Editor -->
-    <div id="workspace">
+    <div class="workspace">
 
-        <!-- Rows -->
-        <section id="rowsPanel">
+        <div class="panel">
             <h3>Rows</h3>
-            <div id="rowList"></div>
-        </section>
+            <div id="rowList" class="asset-list"></div>
+        </div>
 
-        <!-- JSON Editor -->
-        <section id="jsonPanel">
+        <div class="panel">
             <h3>Row JSON</h3>
-            <textarea id="rowJson" class="code-block"></textarea>
+            <textarea id="rowJson"></textarea>
             <button onclick="smarhamrApplyRowEdit()">Apply Row Edit</button>
             <button onclick="smarhamrExportModifiedDexie()">Export Modified Dexie</button>
-        </section>
+        </div>
 
     </div>
 </div>
 
-<!-- ============================================================
-     CLIPBOARD PANEL
-     ============================================================ -->
 <div id="clipboardTab">Clipboard</div>
 
 <div id="clipboardPanel">
@@ -70,15 +57,13 @@
     <textarea id="clipboardText"></textarea>
 </div>
 
-<!-- ============================================================
-     MODULE SCRIPTS
-     ============================================================ -->
+<script src="pako.min.js"></script>
+<script src="smarhamr-config.js"></script>
 <script src="smarhamr-core.js"></script>
 <script src="smarhamr-file.js"></script>
 <script src="smarhamr-clipboard.js"></script>
 <script src="smarhamr-ui.js"></script>
 <script src="smarhamr-dexie.js"></script>
-<script src="smarhamr-config.js"></script>
 
 <script>
     window.addEventListener("load", smarhamrInitDexie);
