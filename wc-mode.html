@@ -7,7 +7,6 @@
 </head>
 <body>
 
-<!-- TOP BAR -->
 <div id="topbar">
     <div id="currentFileName">Scratch Dexie</div>
 
@@ -20,10 +19,7 @@
     <div id="branding">SmarHamr by yggdrasil75</div>
 </div>
 
-<!-- APP ROOT -->
 <div class="app-root">
-
-    <!-- LEFT NAV (Resizable) -->
     <div class="left-nav" id="leftNav">
 
         <div class="panel">
@@ -43,7 +39,6 @@
 
     </div>
 
-    <!-- WORKSPACE -->
     <div class="workspace">
 
         <div class="panel">
@@ -71,16 +66,15 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <script src="smarhamr-config.js"></script>
-
 <script>
 window.addEventListener("load", async () => {
-    if (!dexieData && SmarHamrConfig.autoLoadScratchOnStartup) {
+    const hasState = smarhamrLoadState();
+    if (!hasState && SmarHamrConfig.autoLoadScratchOnStartup) {
         await smarhamrLoadScratch();
-        renderAssets();
     } else {
         updateCurrentFileNameUI();
-        renderAssets();
     }
+    renderAssets();
 });
 
 function goCC() { window.location.href = "cc-mode.html"; }
@@ -137,6 +131,5 @@ function selectAsset(row) {
         `Description: ${row.roleInstruction || "(none)"}`;
 }
 </script>
-
 </body>
 </html>
