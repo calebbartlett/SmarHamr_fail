@@ -2,126 +2,91 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>SmarHamr Studio</title>
+<title>SmarHamr — Landing</title>
+<link rel="stylesheet" href="ui.css">
 
 <style>
+    /* Landing page overrides */
     body {
+        background: #111;
+        color: #eee;
+        font-family: system-ui, sans-serif;
         margin: 0;
-        font-family: Arial, sans-serif;
-        background: #f5f5f5;
-        height: 100vh;
-        overflow: hidden;
+        padding: 0;
     }
 
-    #container {
-        display: flex;
-        height: 100vh;
-        width: 100vw;
+    .landing-container {
+        max-width: 900px;
+        margin: 60px auto;
+        padding: 20px;
+        text-align: center;
     }
 
-    /* LEFT SIDE — NAVIGATION */
-    #nav {
-        width: 300px;
-        min-width: 260px;
-        background: #222;
-        color: #fff;
-        padding: 24px;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
+    h1 {
+        font-size: 2.4rem;
+        margin-bottom: 10px;
+        color: #4a7;
     }
 
-    #nav h2 {
+    h2 {
+        font-size: 1.4rem;
         margin-top: 0;
-        font-size: 1.5rem;
-        margin-bottom: 1.5rem;
-        text-align: left;
+        opacity: 0.8;
     }
 
-    .nav-button {
-        width: 100%;
-        padding: 14px;
-        margin-bottom: 14px;
-        background: #444;
-        border: none;
-        color: #fff;
-        font-size: 1rem;
-        cursor: pointer;
+    .mode-buttons {
+        margin-top: 40px;
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+    }
+
+    .mode-buttons a {
+        background: #222;
+        border: 1px solid #444;
+        padding: 14px 24px;
         border-radius: 6px;
-        text-align: left;
+        color: #eee;
+        text-decoration: none;
+        font-size: 1rem;
         transition: background 0.2s ease;
     }
 
-    .nav-button:hover {
-        background: #555;
+    .mode-buttons a:hover {
+        background: #333;
     }
 
-    /* RIGHT SIDE — FAQ PANEL */
-    #faq {
-        flex: 1;
-        background: #fff;
-        overflow-y: auto;
-        box-sizing: border-box;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-    }
-
-    #faq iframe {
-        flex: 1;
-        width: 100%;
-        border: none;
-    }
-
-    /* RESPONSIVE BEHAVIOR */
-    @media (max-width: 800px) {
-        #container {
-            flex-direction: column;
-        }
-
-        #nav {
-            width: 100%;
-            min-width: 100%;
-        }
-
-        #faq {
-            height: calc(100vh - 260px);
-        }
+    .footer {
+        margin-top: 60px;
+        opacity: 0.6;
+        font-size: 0.85rem;
     }
 </style>
 </head>
 
 <body>
 
-<div id="container">
+<div class="landing-container">
 
-    <!-- LEFT SIDE: MODE SELECTOR -->
-    <div id="nav">
-        <h2>SmarHamr Studio</h2>
+    <h1>SmarHamr</h1>
+    <h2>by yggdrasil75</h2>
 
-        <button class="nav-button"
-            onclick="location.href='thread-character-centric.html'">
-            Character‑Centric Mode
-        </button>
+    <p>
+        A cockpit‑style asset engine for Perchance exports.<br>
+        Load, inspect, edit, and build threads using unified asset profiles.
+    </p>
 
-        <button class="nav-button"
-            onclick="location.href='thread-world-centric.html'">
-            World‑Centric Mode
-        </button>
-
-        <button class="nav-button"
-            onclick="location.href='dexie-editor.html'">
-            Dexie Editor (Guru Mode)
-        </button>
+    <div class="mode-buttons">
+        <a href="cc-mode.html">Character‑Centric Mode</a>
+        <a href="wc-mode.html">World‑Centric Mode</a>
+        <a href="dexie-editor.html">Dexie Editor</a>
     </div>
 
-    <!-- RIGHT SIDE: FAQ PANEL (Embedded) -->
-    <div id="faq">
-        <iframe src="faq.html"></iframe>
+    <div class="footer">
+        SmarHamr v1.0 — Asset‑centric worldbuilding tools
     </div>
 
 </div>
 
 </body>
 </html>
- 
