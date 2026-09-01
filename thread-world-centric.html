@@ -8,31 +8,28 @@
 
 <body>
 
-<div class="flex" style="height:100vh;">
+<!-- ============================================================
+     Unified Import / Export Toolbar
+============================================================ -->
+<div class="panel" style="margin:0; border-radius:0;">
+    <h2>SmarHamr — World‑Centric Mode</h2>
+
+    <div class="row mb-10">
+        <input type="file" id="dexieFile" accept=".json,.json.gz,.gz" style="flex:1;">
+
+        <button class="button ml-10" onclick="importDexie()">Load Export</button>
+        <button class="button ml-10" onclick="resetScratch()">Reset Scratch</button>
+        <button class="button ml-10" onclick="exportDexie()">Export</button>
+    </div>
+
+    <p id="dataSourceLabel"><em>Loading scratch Dexie…</em></p>
+</div>
+
+<div class="flex" style="height:calc(100vh - 160px);">
 
     <!-- LEFT PANEL -->
     <div class="panel" style="width:320px; margin:0; border-radius:0; overflow-y:auto;">
-        <h2>World‑Centric Mode</h2>
-        <p>Root threads in world assets.</p>
-
-        <h3 class="mt-10">Data Source</h3>
-        <p id="dataSourceLabel"><em>Loading scratch Dexie…</em></p>
-
-        <input type="file" id="dexieFile" accept=".json" />
-
-        <button class="button mt-10" onclick="importDexie()">
-            Load Export (JSON)
-        </button>
-
-        <button class="button mt-10" onclick="resetScratch()">
-            Reset to Scratch
-        </button>
-
-        <button class="button mt-10" onclick="exportDexie()">
-            Export Dexie (gzip)
-        </button>
-
-        <h3 class="mt-20">Worlds</h3>
+        <h3>Worlds</h3>
         <div id="worldList">
             <p><em>No worlds loaded yet.</em></p>
         </div>
@@ -66,9 +63,7 @@
             <textarea id="threadMessages"></textarea>
         </div>
 
-        <button class="button mt-20" onclick="saveThread()">
-            Save Thread (placeholder)
-        </button>
+        <button class="button mt-20" onclick="saveThread()">Save Thread</button>
 
     </div>
 
@@ -97,11 +92,11 @@ function resetScratch() {
 
 function importDexie() {
     const file = document.getElementById("dexieFile").files[0];
-    if (!file) return alert("Choose a JSON file first.");
+    if (!file) return alert("Choose a .json or .json.gz file first.");
 
     smarhamrLoadExport(file, data => {
         dexieData = data;
-        document.getElementById("dataSourceLabel").textContent = "Export loaded";
+        document.getElementById("dataSourceLabel").textContent = `Loaded: ${file.name}`;
         renderWorlds();
     });
 }
