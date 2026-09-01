@@ -1,124 +1,219 @@
 # SmarHamr
 Perchance AI Chat Studio Dev
+# SmarHamr Cockpit — Modular Architecture (v2.0)
 
-============================================================
-FILE: index.html
-TYPE: Landing Page
-ROLE: Entry point for SmarHamr cockpit suite.
-DESCRIPTION:
-- Simple branded landing page.
-- Links to CC Mode, WC Mode, and Dexie Editor.
-- No Dexie data loaded here.
-- Pure navigation hub.
+A fully modular, browser‑based cockpit for editing Perchance AI generator exports, Dexie databases, and character/world assets.  
+This version replaces the original monolithic HTML pages with a clean, maintainable module system.
 
-============================================================
-FILE: cc-mode.html
-TYPE: Cockpit Page (Character-Centric)
-ROLE: Character-focused thread builder + asset viewer.
-DESCRIPTION:
-- Loads persistent Dexie data from localStorage.
-- Displays filename in top bar.
-- Left nav: File Management + Asset Profiles.
-- Workspace panels:
-    - Asset Overview (Character-Centric)
-    - Thread Builder (Character focus)
-    - Memory Notes
-    - Messages
-- Mode buttons switch between CC/WC/Dexie pages.
-- Uses shared config + shared CSS.
+---
 
-============================================================
-FILE: wc-mode.html
-TYPE: Cockpit Page (World-Centric)
-ROLE: World-focused thread builder + asset viewer.
-DESCRIPTION:
-- Same persistence model as CC Mode.
-- Same left nav structure.
-- Workspace panels:
-    - Asset Overview (World-Centric)
-    - Thread Builder (World focus)
-    - Memory Notes
-    - Messages
-- Mode buttons switch between CC/WC/Dexie pages.
-- Uses shared config + shared CSS.
+## Overview
 
-============================================================
-FILE: dexie-editor.html
-TYPE: Cockpit Page (Dexie Table Inspector)
-ROLE: Inspect, edit, and modify Dexie tables directly.
-DESCRIPTION:
-- Loads persistent Dexie data from localStorage.
-- Displays filename in top bar.
-- Left nav:
-    - File Management
-    - Table List (instead of Asset Profiles)
-- Workspace panels:
-    - Selected Table Name
-    - Row List
-    - Row JSON Editor
-- Edits rows and writes back to Dexie data.
-- Saves updated Dexie data to localStorage.
-- Uses shared config + shared CSS.
+SmarHamr now uses a **multi‑module architecture** designed for:
 
-============================================================
-FILE: smarhamr-config.js
-TYPE: Global Config + Persistence Engine
-ROLE: Core logic for loading, saving, exporting, and managing Dexie data.
-DESCRIPTION:
-- Defines SmarHamrConfig (prefixes, scratch file, debug mode).
-- Provides:
-    - smarhamrLoadExport()
-    - smarhamrLoadScratch()
-    - smarhamrExport()
-    - smarhamrGetRows()
-    - smarhamrSetRows()
-- Persistence:
-    - smarhamrSaveState() → saves Dexie + filename to localStorage.
-    - smarhamrLoadState() → restores Dexie + filename from localStorage.
-- UI helpers:
-    - updateCurrentFileNameUI()
-    - setActiveMode()
+- faster development  
+- smaller files  
+- easier debugging  
+- shared logic across CC/WC/Dexie modes  
+- stable global state  
+- consistent clipboard behavior  
+- unified file loading/exporting  
+- clean separation of concerns  
 
-============================================================
-FILE: ui.css
-TYPE: Shared Cockpit Stylesheet
-ROLE: Defines the entire cockpit layout.
-DESCRIPTION:
-- Top bar styling (filename, mode buttons, branding).
-- Resizable left nav (CSS-only `resize: horizontal`).
-- Workspace panel styling.
-- Buttons, textareas, and asset list styling.
-- Dark theme consistent across all pages.
+All logic is split into **7 JavaScript modules** plus 3 mode‑specific modules.
 
-============================================================
-FILE: dexie-scratch.json
-TYPE: Default Dexie Data
-ROLE: Scratch fallback when no file is loaded.
-DESCRIPTION:
-- Loaded automatically if no persistent Dexie data exists.
-- Used as a safe baseline for CC/WC/Dexie pages.
-- Structure matches Perchance export format.
+---
 
-============================================================
-FILE: (Optional future) assets/
-TYPE: Asset folder
-ROLE: Placeholder for future images, logos, or static resources.
-DESCRIPTION:
-- Currently unused.
-- Reserved for future cockpit UI enhancements.
+## Folder Structure
 
-============================================================
-FILE: (Optional future) scripts/
-TYPE: JS folder
-ROLE: For future modularization.
-DESCRIPTION:
-- Currently unused.
-- Could hold scrubber.js, editor.js, diff.js, etc.
+```
+/SmarHamr/
+    smarhamr-core.js
+    smarhamr-file.js
+    smarhamr-clipboard.js
+    smarhamr-ui.js
 
-============================================================
-FILE: (Optional future) README.md
-TYPE: Documentation
-ROLE: Repo-level description.
-DESCRIPTION:
-- Not present yet.
-- Could describe cockpit architecture, persistence model, and usage.
+    smarhamr-cc.js
+    smarhamr-wc.js
+    smarhamr-dexie.js
+
+    cc-mode.html
+    wc-mode.html
+    dexie-editor.html
+
+    ui.css
+    README.md
+```
+
+---
+
+## Modules
+
+### 1. smarhamr-core.js  
+Global state + navigation.
+
+- window.dexieData  
+- window.currentFileName  
+- window.selectedAssetId  
+- window.selectedTableName  
+- window.selectedRowId  
+- goCC(), goWC(), goDexie()
+
+---
+
+### 2. smarhamr-file.js  
+Unified file operations.
+
+- load `.json` / `.json.gz`  
+- reset scratch Dexie  
+- save Dexie to memory  
+- export Dexie (gzip)  
+- sync filename globally  
+
+---
+
+### 3. smarhamr-clipboard.js  
+Clipboard persistence + UI control.
+
+- load clipboard text  
+- save clipboard text  
+- open/close clipboard panel  
+- attach clipboard events  
+
+---
+
+### 4. smarhamr-ui.js  
+Shared UI helpers.
+
+- safe DOM getter  
+- update filename display  
+- highlight active mode button  
+- initialize shared UI  
+
+---
+
+### 5. smarhamr-cc.js  
+Character‑Centric mode logic.
+
+- render character assets  
+- populate identity/behavior/prompting/visual/lore/custom code  
+- save all CC panels  
+- thread builder scratchpad  
+
+---
+
+### 6. smarhamr-wc.js  
+World‑Centric mode logic.
+
+- render world assets  
+- populate identity/behavior/prompting/visual/lore/custom code  
+- save all WC panels  
+
+---
+
+### 7. smarhamr-dexie.js  
+Dexie Editor logic.
+
+- render tables  
+- render rows  
+- JSON row editor  
+- apply row edits  
+- export modified Dexie  
+
+---
+
+## Mode Pages
+
+Each mode page is now tiny and loads only the modules it needs.
+
+### CC Mode
+
+```html
+<script src="smarhamr-core.js"></script>
+<script src="smarhamr-file.js"></script>
+<script src="smarhamr-clipboard.js"></script>
+<script src="smarhamr-ui.js"></script>
+<script src="smarhamr-cc.js"></script>
+
+<script>
+window.addEventListener("load", smarhamrInitCC);
+</script>
+```
+
+### WC Mode
+
+```html
+<script src="smarhamr-core.js"></script>
+<script src="smarhamr-file.js"></script>
+<script src="smarhamr-clipboard.js"></script>
+<script src="smarhamr-ui.js"></script>
+<script src="smarhamr-wc.js"></script>
+
+<script>
+window.addEventListener("load", smarhamrInitWC);
+</script>
+```
+
+### Dexie Editor
+
+```html
+<script src="smarhamr-core.js"></script>
+<script src="smarhamr-file.js"></script>
+<script src="smarhamr-clipboard.js"></script>
+<script src="smarhamr-ui.js"></script>
+<script src="smarhamr-dexie.js"></script>
+
+<script>
+window.addEventListener("load", smarhamrInitDexie);
+</script>
+```
+
+---
+
+## Benefits of the Modular Architecture
+
+- **No duplicated logic**  
+  File operations, clipboard, and UI helpers are shared.
+
+- **Stable global state**  
+  `currentFileName` and `dexieData` are consistent across modes.
+
+- **Fast debugging**  
+  Each module is small and isolated.
+
+- **No more filename corruption**  
+  `[object HTMLDivElement]` cannot occur.
+
+- **No more JSON export mismatches**  
+  All modes use the same export pipeline.
+
+- **Easy future expansion**  
+  Add new modes or panels without touching core modules.
+
+---
+
+## JSON Artifact File
+
+A full reference map of all modules is stored in:
+
+```
+smarhamr-modules.json
+```
+
+This file documents:
+
+- module responsibilities  
+- provided functions  
+- dependencies  
+- architecture notes  
+
+---
+
+## Development Notes
+
+- All modules are pure browser JS (no build step).  
+- Dexie data is stored in RAM and shared across modes.  
+- Clipboard uses `localStorage`.  
+- Export uses gzip via pako.  
+- All UI updates use shared helpers.  
+
