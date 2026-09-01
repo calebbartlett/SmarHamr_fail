@@ -1,5 +1,5 @@
 /* ============================================================
-   SmarHamr Global Config
+   SmarHamr Global Config (with persistence)
    ============================================================ */
 
 let dexieData = null;
@@ -13,6 +13,31 @@ const SmarHamrConfig = {
     autoLoadScratchOnStartup: true,
     debugMode: false
 };
+
+/* ============================================================
+   Persistence helpers
+   ============================================================ */
+function smarhamrSaveState(data, fileName) {
+    try {
+        localStorage.setItem("smarhamrDexie", JSON.stringify(data));
+        localStorage.setItem("smarhamrFileName", fileName);
+    } catch (e) {
+        console.warn("Failed to save SmarHamr state:", e);
+    }
+}
+
+function smarhamrLoadState() {
+    try {
+        const saved = localStorage.getItem("smarhamrDexie");
+        if (!saved) return false;
+        dexieData = JSON.parse(saved);
+        currentFileName = localStorage.getItem("smarhamrFileName") || "Scratch Dexie";
+        return true;
+    } catch (e) {
+        console.warn("Failed to load SmarHamr state:", e);
+        return false;
+    }
+}
 
 /* ============================================================
    Timestamp
@@ -38,6 +63,7 @@ async function smarhamrLoadScratch() {
         if (SmarHamrConfig.debugMode) console.log("Scratch loaded:", data);
         dexieData = data;
         currentFileName = "Scratch Dexie";
+        smarhamrSaveState(dexieData, currentFileName);
         updateCurrentFileNameUI();
         return data;
     } catch (err) {
@@ -64,6 +90,7 @@ function smarhamrLoadExport(file, callback) {
                 if (SmarHamrConfig.debugMode) console.log("GZ export loaded:", data);
                 dexieData = data;
                 currentFileName = file.name;
+                smarhamrSaveState(dexieData, currentFileName);
                 updateCurrentFileNameUI();
                 callback(data);
             } catch (err) {
@@ -81,6 +108,7 @@ function smarhamrLoadExport(file, callback) {
             if (SmarHamrConfig.debugMode) console.log("JSON export loaded:", data);
             dexieData = data;
             currentFileName = file.name;
+            smarhamrSaveState(dexieData, currentFileName);
             updateCurrentFileNameUI();
             callback(data);
         } catch (err) {
