@@ -192,6 +192,7 @@
 
     </div>
 </div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <script src="smarhamr-config.js"></script>
 
@@ -201,15 +202,14 @@
    ============================================================ */
 let dexieData = window.dexieData || null;
 let currentFileName = window.currentFileName || "Scratch Dexie";
-let selectedTable = null;
-let selectedRowId = null;
+let selectedAssetId = null;
 
 /* ============================================================
    STARTUP — no auto-load from memory
    ============================================================ */
 window.addEventListener("load", () => {
     updateCurrentFileNameUI();
-    renderTables();
+    renderAssets();
     loadClipboard();
 });
 
@@ -231,7 +231,7 @@ function loadExport() {
         dexieData = data;
         currentFileName = file.name;
         updateCurrentFileNameUI();
-        renderTables();
+        renderAssets();
     });
 }
 
@@ -239,11 +239,10 @@ function resetScratch() {
     smarhamrLoadScratch().then(() => {
         currentFileName = "Scratch Dexie";
         updateCurrentFileNameUI();
-        renderTables();
+        renderAssets();
     });
 }
 
-/* NEW: Save to Memory (manual persistence) */
 function saveToMemory() {
     if (!dexieData) {
         alert("No Dexie data loaded.");
@@ -263,124 +262,241 @@ function exportDexie() {
 }
 
 /* ============================================================
-   TABLE LIST
+   ASSET LIST
    ============================================================ */
-function renderTables() {
-    const list = document.getElementById("tableList");
+function renderAssets() {
+    const list = document.getElementById("assetList");
 
     if (!dexieData) {
-        list.innerHTML = "<p><em>No Dexie database loaded.</em></p>";
+        list.innerHTML = "<p><em>No assets loaded.</em></p>";
         return;
     }
 
-    const tables = Object.keys(dexieData);
-    list.innerHTML = "";
-
-    tables.forEach(tbl => {
-        const btn = document.createElement("button");
-        btn.textContent = tbl;
-        btn.onclick = () => selectTable(tbl);
-        if (tbl === selectedTable) btn.classList.add("active");
-        list.appendChild(btn);
-    });
-}
-
-/* ============================================================
-   SELECT TABLE + RENDER ROWS
-   ============================================================ */
-function selectTable(tbl) {
-    selectedTable = tbl;
-    selectedRowId = null;
-
-    document.getElementById("selectedTableName").textContent = tbl;
-
-    renderTables();
-    renderRows();
-    clearRowEditor();
-}
-
-function renderRows() {
-    const list = document.getElementById("rowList");
-
-    if (!dexieData || !selectedTable) {
-        list.innerHTML = "<p><em>No rows to display.</em></p>";
-        return;
-    }
-
-    const rows = smarhamrGetRows(dexieData, selectedTable);
+    const rows = smarhamrGetRows(dexieData, "characters");
     if (!rows.length) {
-        list.innerHTML = "<p><em>No rows found.</em></p>";
+        list.innerHTML = "<p><em>No assets found.</em></p>";
         return;
     }
 
     list.innerHTML = "";
     rows.forEach(row => {
         const btn = document.createElement("button");
-        btn.textContent = `Row #${row.id}`;
-        btn.onclick = () => selectRow(row.id);
-        if (row.id === selectedRowId) btn.classList.add("active");
+        btn.textContent = row.name || `Asset #${row.id}`;
+        btn.onclick = () => selectAsset(row);
+        if (row.id === selectedAssetId) btn.classList.add("active");
         list.appendChild(btn);
     });
 }
 
 /* ============================================================
-   SELECT ROW + POPULATE JSON EDITOR
+   SELECT ASSET + POPULATE PANELS
    ============================================================ */
-function selectRow(rowId) {
-    selectedRowId = rowId;
-
-    renderRows();
-
-    const rows = smarhamrGetRows(dexieData, selectedTable);
-    const row = rows.find(r => r.id === rowId);
-
-    if (!row) {
-        clearRowEditor();
-        return;
-    }
-
-    document.getElementById("rowJson").value =
-        JSON.stringify(row, null, 2);
+function selectAsset(row) {
+    selectedAssetId = row.id;
+    highlightSelectedAsset();
+    populateIdentity(row);
+    populateBehavior(row);
+    populatePrompting(row);
+    populateVisual(row);
+    populateInitialMessages(row);
+    populateLore(row);
+    populateCustomCode(row);
 }
 
-/* Clear JSON editor */
-function clearRowEditor() {
-    document.getElementById("rowJson").value = "";
+function highlightSelectedAsset() {
+    const list = document.getElementById("assetList");
+    Array.from(list.querySelectorAll("button")).forEach(btn => {
+        btn.classList.remove("active");
+        if (btn.textContent.includes(`#${selectedAssetId}`)) {
+            btn.classList.add("active");
+        }
+    });
 }
 
 /* ============================================================
-   APPLY ROW EDIT
+   IDENTITY PANEL
    ============================================================ */
-function applyRowEdit() {
-    if (!dexieData || !selectedTable || selectedRowId == null) {
-        alert("No row selected.");
-        return;
-    }
+function populateIdentity(row) {
+    const el = document.getElementById("identityView");
+    const identity = {
+        id: row.id,
+        name: row.name,
+        modelName: row.modelName,
+        uuid: row.uuid,
+        creationTime: row.creationTime,
+        lastMessageTime: row.lastMessageTime,
+        folderPath: row.folderPath
+    };
+    el.textContent = JSON.stringify(identity, null, 2);
+}
 
-    let newJson;
+/* ============================================================
+   WORLD BEHAVIOR PANEL
+   ============================================================ */
+function populateBehavior(row) {
+    document.getElementById("roleInstruction").value = row.roleInstruction || "";
+    document.getElementById("generalWritingInstructions").value = row.generalWritingInstructions || "";
+    document.getElementById("reminderMessage").value = row.reminderMessage || "";
+    document.getElementById("messageWrapperStyle").value = row.messageWrapperStyle || "";
+    document.getElementById("fitMessagesInContextMethod").value = row.fitMessagesInContextMethod || "";
+    document.getElementById("autoGenerateMemories").value = row.autoGenerateMemories || "";
+    document.getElementById("temperature").value = row.temperature ?? "";
+    document.getElementById("maxTokensPerMessage").value = row.maxTokensPerMessage ?? "";
+    document.getElementById("textEmbeddingModelName").value = row.textEmbeddingModelName || "";
+}
+
+function saveBehavior() {
+    if (!dexieData || selectedAssetId == null) return;
+
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+
+    row.roleInstruction = document.getElementById("roleInstruction").value;
+    row.generalWritingInstructions = document.getElementById("generalWritingInstructions").value;
+    row.reminderMessage = document.getElementById("reminderMessage").value;
+    row.messageWrapperStyle = document.getElementById("messageWrapperStyle").value;
+    row.fitMessagesInContextMethod = document.getElementById("fitMessagesInContextMethod").value;
+    row.autoGenerateMemories = document.getElementById("autoGenerateMemories").value;
+    row.temperature = parseFloat(document.getElementById("temperature").value) || row.temperature;
+    row.maxTokensPerMessage = parseInt(document.getElementById("maxTokensPerMessage").value) || row.maxTokensPerMessage;
+    row.textEmbeddingModelName = document.getElementById("textEmbeddingModelName").value;
+
+    smarhamrSetRows(dexieData, "characters", rows);
+    alert("World behavior saved.");
+}
+
+/* ============================================================
+   PROMPTING PANEL
+   ============================================================ */
+function populatePrompting(row) {
+    document.getElementById("imagePromptPrefix").value = row.imagePromptPrefix || "";
+    document.getElementById("imagePromptSuffix").value = row.imagePromptSuffix || "";
+    document.getElementById("imagePromptTriggers").value = row.imagePromptTriggers || "";
+    document.getElementById("messageInputPlaceholder").value = row.messageInputPlaceholder || "";
+}
+
+function savePrompting() {
+    if (!dexieData || selectedAssetId == null) return;
+
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+
+    row.imagePromptPrefix = document.getElementById("imagePromptPrefix").value;
+    row.imagePromptSuffix = document.getElementById("imagePromptSuffix").value;
+    row.imagePromptTriggers = document.getElementById("imagePromptTriggers").value;
+    row.messageInputPlaceholder = document.getElementById("messageInputPlaceholder").value;
+
+    smarhamrSetRows(dexieData, "characters", rows);
+    alert("Prompting saved.");
+}
+
+/* ============================================================
+   VISUAL PANEL
+   ============================================================ */
+function populateVisual(row) {
+    document.getElementById("avatar").value =
+        row.avatar ? JSON.stringify(row.avatar, null, 2) : "";
+
+    document.getElementById("scene").value =
+        row.scene ? JSON.stringify(row.scene, null, 2) : "";
+
+    document.getElementById("userCharacter").value =
+        row.userCharacter ? JSON.stringify(row.userCharacter, null, 2) : "";
+
+    document.getElementById("systemCharacter").value =
+        row.systemCharacter ? JSON.stringify(row.systemCharacter, null, 2) : "";
+}
+
+function saveVisual() {
+    if (!dexieData || selectedAssetId == null) return;
+
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+
+    try { row.avatar = JSON.parse(document.getElementById("avatar").value || "null"); } catch {}
+    try { row.scene = JSON.parse(document.getElementById("scene").value || "null"); } catch {}
+    try { row.userCharacter = JSON.parse(document.getElementById("userCharacter").value || "null"); } catch {}
+    try { row.systemCharacter = JSON.parse(document.getElementById("systemCharacter").value || "null"); } catch {}
+
+    smarhamrSetRows(dexieData, "characters", rows);
+    alert("Visual identity saved.");
+}
+
+/* ============================================================
+   INITIAL MESSAGES PANEL
+   ============================================================ */
+function populateInitialMessages(row) {
+    document.getElementById("initialMessages").value =
+        row.initialMessages ? JSON.stringify(row.initialMessages, null, 2) : "";
+}
+
+function saveInitialMessages() {
+    if (!dexieData || selectedAssetId == null) return;
+
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+
     try {
-        newJson = JSON.parse(document.getElementById("rowJson").value);
+        row.initialMessages = JSON.parse(document.getElementById("initialMessages").value || "[]");
+        smarhamrSetRows(dexieData, "characters", rows);
+        alert("Initial messages saved.");
     } catch {
-        alert("Invalid JSON.");
-        return;
+        alert("Invalid JSON for initial messages.");
     }
-
-    const rows = smarhamrGetRows(dexieData, selectedTable);
-    const idx = rows.findIndex(r => r.id === selectedRowId);
-
-    if (idx === -1) {
-        alert("Row not found.");
-        return;
-    }
-
-    rows[idx] = newJson;
-    smarhamrSetRows(dexieData, selectedTable, rows);
-
-    alert("Row updated.");
-    renderRows();
 }
+
 /* ============================================================
-   SHORTCUT SCROLL (Dexie Editor uses panel IDs)
+   LORE PANEL
+   ============================================================ */
+function populateLore(row) {
+    document.getElementById("loreBookUrls").value =
+        row.loreBookUrls ? JSON.stringify(row.loreBookUrls, null, 2) : "";
+}
+
+function saveLore() {
+    if (!dexieData || selectedAssetId == null) return;
+
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+
+    try {
+        row.loreBookUrls = JSON.parse(document.getElementById("loreBookUrls").value || "[]");
+        smarhamrSetRows(dexieData, "characters", rows);
+        alert("Lore saved.");
+    } catch {
+        alert("Invalid JSON for loreBookUrls.");
+    }
+}
+
+/* ============================================================
+   CUSTOM CODE PANEL
+   ============================================================ */
+function populateCustomCode(row) {
+    document.getElementById("customCode").value = row.customCode || "";
+}
+
+function saveCustomCode() {
+    if (!dexieData || selectedAssetId == null) return;
+
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+
+    row.customCode = document.getElementById("customCode").value;
+    smarhamrSetRows(dexieData, "characters", rows);
+    alert("Custom code saved.");
+}
+
+/* ============================================================
+   THREAD BUILDER (scratchpad only)
+   ============================================================ */
+function populateThreadBuilder(row) {
+    document.getElementById("threadLore").value = "";
+    document.getElementById("threadMemory").value = "";
+    document.getElementById("threadMessages").value = "";
+}
+
+/* ============================================================
+   SHORTCUT SCROLL
    ============================================================ */
 function scrollToPanel(id) {
     const el = document.getElementById(id);
@@ -437,5 +553,6 @@ document.getElementById("clipboardToggle").addEventListener("click", () => {
 document.getElementById("clipboardText").addEventListener("input", saveClipboard);
 
 </script>
+
 </body>
 </html>
