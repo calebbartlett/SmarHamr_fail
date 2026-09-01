@@ -1,46 +1,17 @@
 /* ============================================================
-   SmarHamr Global Config (with persistence)
+   SmarHamr Global Config (NO auto‑save, NO auto‑load)
    ============================================================ */
-
-let dexieData = null;
-let currentFileName = "Scratch Dexie";
 
 const SmarHamrConfig = {
     scratchFile: "dexie-scratch.json",
     exportPrefix: "smarhamr",
     exportExtension: "json.gz",
     timestampFormat: "YYYYMMDDhhmm",
-    autoLoadScratchOnStartup: true,
     debugMode: false
 };
 
 /* ============================================================
-   Persistence helpers
-   ============================================================ */
-function smarhamrSaveState(data, fileName) {
-    try {
-        localStorage.setItem("smarhamrDexie", JSON.stringify(data));
-        localStorage.setItem("smarhamrFileName", fileName);
-    } catch (e) {
-        console.warn("Failed to save SmarHamr state:", e);
-    }
-}
-
-function smarhamrLoadState() {
-    try {
-        const saved = localStorage.getItem("smarhamrDexie");
-        if (!saved) return false;
-        dexieData = JSON.parse(saved);
-        currentFileName = localStorage.getItem("smarhamrFileName") || "Scratch Dexie";
-        return true;
-    } catch (e) {
-        console.warn("Failed to load SmarHamr state:", e);
-        return false;
-    }
-}
-
-/* ============================================================
-   Timestamp
+   Timestamp helper
    ============================================================ */
 function smarhamrTimestamp() {
     const now = new Date();
@@ -54,18 +25,19 @@ function smarhamrTimestamp() {
 }
 
 /* ============================================================
-   Scratch Loader
+   Scratch Loader (NO auto‑save)
    ============================================================ */
 async function smarhamrLoadScratch() {
     try {
         const res = await fetch(SmarHamrConfig.scratchFile);
         const data = await res.json();
+
         if (SmarHamrConfig.debugMode) console.log("Scratch loaded:", data);
-        dexieData = data;
-        currentFileName = "Scratch Dexie";
-        smarhamrSaveState(dexieData, currentFileName);
-        updateCurrentFileNameUI();
+
+        // DO NOT set global dexieData here.
+        // Caller sets dexieData manually.
         return data;
+
     } catch (err) {
         console.error("Failed to load scratch Dexie:", err);
         throw err;
@@ -87,12 +59,11 @@ function smarhamrLoadExport(file, callback) {
                 const binary = new Uint8Array(e.target.result);
                 const decompressed = pako.ungzip(binary, { to: "string" });
                 const data = JSON.parse(decompressed);
+
                 if (SmarHamrConfig.debugMode) console.log("GZ export loaded:", data);
-                dexieData = data;
-                currentFileName = file.name;
-                smarhamrSaveState(dexieData, currentFileName);
-                updateCurrentFileNameUI();
+
                 callback(data);
+
             } catch (err) {
                 alert("Invalid .json.gz export.");
                 console.error(err);
@@ -105,12 +76,11 @@ function smarhamrLoadExport(file, callback) {
     reader.onload = e => {
         try {
             const data = JSON.parse(e.target.result);
+
             if (SmarHamrConfig.debugMode) console.log("JSON export loaded:", data);
-            dexieData = data;
-            currentFileName = file.name;
-            smarhamrSaveState(dexieData, currentFileName);
-            updateCurrentFileNameUI();
+
             callback(data);
+
         } catch (err) {
             alert("Invalid JSON export.");
             console.error(err);
@@ -150,7 +120,7 @@ function smarhamrExport(prefix, data) {
 }
 
 /* ============================================================
-   Helpers
+   Dexie Table Helpers
    ============================================================ */
 function smarhamrGetRows(data, tableName) {
     if (!data || !data.data || !data.data.data) return [];
@@ -168,7 +138,9 @@ function smarhamrSetRows(data, tableName, rows) {
    ============================================================ */
 function updateCurrentFileNameUI() {
     const el = document.getElementById("currentFileName");
-    if (el) el.textContent = currentFileName;
+    if (el && window.currentFileName) {
+        el.textContent = window.currentFileName;
+    }
 }
 
 function setActiveMode(mode) {
