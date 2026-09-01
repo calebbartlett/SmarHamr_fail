@@ -4,9 +4,103 @@
 <meta charset="UTF-8">
 <title>SmarHamr — Dexie Editor</title>
 <link rel="stylesheet" href="ui.css">
+
+<style>
+/* Workspace + clipboard layout */
+.app-root {
+    display: flex;
+    height: calc(100vh - 40px);
+}
+
+/* center workspace + right clipboard */
+.workspace-shell {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* main stacked workspace */
+.workspace {
+    flex: 1;
+    padding: 10px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+/* clipboard vertical tab + panel */
+.clipboard-tab {
+    position: relative;
+    width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #181818;
+    border-left: 1px solid #333;
+    cursor: pointer;
+}
+
+.clipboard-tab span {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 0.75rem;
+    color: #ccc;
+}
+
+.clipboard {
+    width: 300px;
+    min-width: 200px;
+    max-width: 600px;
+    resize: horizontal;
+    overflow: auto;
+    background: #181818;
+    border-left: 1px solid #333;
+    padding: 10px;
+    box-sizing: border-box;
+    display: none;
+}
+
+.clipboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.clipboard-header button {
+    font-size: 0.75rem;
+}
+
+/* table list */
+#tableList button {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 4px;
+}
+
+#tableList button.active {
+    background: #4a7;
+    color: #111;
+    border-color: #6c9;
+}
+
+/* row list */
+#rowList button {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 4px;
+}
+
+#rowList button.active {
+    background: #6a9;
+    color: #111;
+    border-color: #9cb;
+}
+</style>
 </head>
+
 <body>
 
+<!-- TOP BAR -->
 <div id="topbar">
     <div id="currentFileName">Scratch Dexie</div>
 
@@ -20,161 +114,328 @@
 </div>
 
 <div class="app-root">
+
+    <!-- LEFT NAV -->
     <div class="left-nav" id="leftNav">
 
         <div class="panel">
             <h3>File Management</h3>
+
             <input type="file" id="dexieFile" accept=".json,.json.gz,.gz">
-            <button onclick="importDexie()">Load Export</button>
+
+            <button onclick="loadExport()">Load Export</button>
             <button onclick="resetScratch()">Reset Scratch</button>
+
+            <!-- NEW: Save to Memory -->
+            <button onclick="saveToMemory()">Save to Memory</button>
+
+            <!-- Existing: Export -->
             <button onclick="exportDexie()">Export</button>
         </div>
 
         <div class="panel">
-            <h3>Tables</h3>
+            <h3>Dexie Tables</h3>
             <div id="tableList">
-                <p><em>No tables loaded.</em></p>
+                <p><em>No Dexie database loaded.</em></p>
             </div>
         </div>
 
     </div>
 
-    <div class="workspace">
+    <!-- CENTER WORKSPACE + RIGHT CLIPBOARD -->
+    <div class="workspace-shell">
 
-        <div class="panel">
-            <h3 id="selectedTableName"><em>No table selected.</em></h3>
-        </div>
+        <!-- MAIN WORKSPACE -->
+        <div class="workspace">
 
-        <div class="panel">
-            <h3>Rows</h3>
-            <div id="rowList">
-                <p><em>No rows.</em></p>
+            <!-- Selected Table -->
+            <div class="panel">
+                <h3>Selected Table</h3>
+                <p id="selectedTableName"><em>No table selected.</em></p>
             </div>
+
+            <!-- Rows -->
+            <div class="panel">
+                <h3>Rows</h3>
+                <div id="rowList">
+                    <p><em>No rows to display.</em></p>
+                </div>
+            </div>
+
+            <!-- Row JSON -->
+            <div class="panel">
+                <h3>Row JSON</h3>
+                <textarea id="rowJson" class="code-block" style="min-height:200px;"
+                    placeholder="Select a row to view/edit JSON..."></textarea>
+
+                <button onclick="applyRowEdit()">Apply Row Edit</button>
+            </div>
+
+            <button class="button mt-20" onclick="exportDexie()">
+                Export Modified Dexie JSON
+            </button>
+
         </div>
 
-        <div class="panel">
-            <h3>Row JSON</h3>
-            <textarea id="rowJson"></textarea>
-            <button onclick="applyRowEdit()">Apply Row Edit</button>
+        <!-- RIGHT-HAND CLIPBOARD -->
+        <div class="clipboard-tab" id="clipboardTab">
+            <span>Clipboard</span>
+        </div>
+
+        <div class="clipboard" id="clipboardPanel">
+            <div class="clipboard-header">
+                <span>Clipboard</span>
+                <button id="clipboardToggle">&lt; Hide</button>
+            </div>
+            <textarea id="clipboardText"></textarea>
         </div>
 
     </div>
 </div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <script src="smarhamr-config.js"></script>
-<script>
-let currentTable = null;
-let currentRows = [];
-let currentRowIndex = null;
 
-window.addEventListener("load", async () => {
-    const hasState = smarhamrLoadState();
-    if (!hasState && SmarHamrConfig.autoLoadScratchOnStartup) {
-        await smarhamrLoadScratch();
-    } else {
-        updateCurrentFileNameUI();
-    }
+<script>
+/* ============================================================
+   GLOBAL STATE — shared across all modes
+   ============================================================ */
+let dexieData = window.dexieData || null;
+let currentFileName = window.currentFileName || "Scratch Dexie";
+let selectedTable = null;
+let selectedRowId = null;
+
+/* ============================================================
+   STARTUP — no auto-load from memory
+   ============================================================ */
+window.addEventListener("load", () => {
+    updateCurrentFileNameUI();
     renderTables();
+    loadClipboard();
 });
 
+/* ============================================================
+   NAVIGATION — preserve in-RAM dexieData across modes
+   ============================================================ */
 function goCC() { window.location.href = "cc-mode.html"; }
 function goWC() { window.location.href = "wc-mode.html"; }
 function goDexie() { window.location.href = "dexie-editor.html"; }
 
-function importDexie() {
+/* ============================================================
+   FILE MANAGEMENT — Load, Reset, Save to Memory, Export
+   ============================================================ */
+function loadExport() {
     const file = document.getElementById("dexieFile").files[0];
     if (!file) { alert("Choose a file first."); return; }
 
     smarhamrLoadExport(file, data => {
+        dexieData = data;
+        currentFileName = file.name;
+        updateCurrentFileNameUI();
         renderTables();
     });
 }
 
 function resetScratch() {
     smarhamrLoadScratch().then(() => {
+        currentFileName = "Scratch Dexie";
+        updateCurrentFileNameUI();
         renderTables();
     });
 }
 
+/* NEW: Save to Memory (manual persistence) */
+function saveToMemory() {
+    if (!dexieData) {
+        alert("No Dexie data loaded.");
+        return;
+    }
+    smarhamrSaveState(dexieData, currentFileName);
+    alert("Saved to memory.");
+}
+
 function exportDexie() {
-    const prefix = prompt("Export filename prefix:", "dexieEditor");
+    if (!dexieData) {
+        alert("No Dexie data loaded.");
+        return;
+    }
+    const prefix = prompt("Export filename prefix:", "assets");
     smarhamrExport(prefix, dexieData);
 }
 
+/* ============================================================
+   TABLE LIST
+   ============================================================ */
 function renderTables() {
     const list = document.getElementById("tableList");
+
     if (!dexieData) {
-        list.innerHTML = "<p><em>No tables loaded.</em></p>";
+        list.innerHTML = "<p><em>No Dexie database loaded.</em></p>";
         return;
     }
 
-    const tables = dexieData.data.data || [];
-    if (!tables.length) {
-        list.innerHTML = "<p><em>No tables found.</em></p>";
-        return;
-    }
-
+    const tables = Object.keys(dexieData);
     list.innerHTML = "";
-    tables.forEach(t => {
+
+    tables.forEach(tbl => {
         const btn = document.createElement("button");
-        btn.textContent = `${t.tableName} (${(t.rows || []).length} rows)`;
-        btn.onclick = () => selectTable(t.tableName);
+        btn.textContent = tbl;
+        btn.onclick = () => selectTable(tbl);
+        if (tbl === selectedTable) btn.classList.add("active");
         list.appendChild(btn);
     });
 }
 
-function selectTable(name) {
-    currentTable = name;
-    currentRows = smarhamrGetRows(dexieData, name);
-    currentRowIndex = null;
+/* ============================================================
+   SELECT TABLE + RENDER ROWS
+   ============================================================ */
+function selectTable(tbl) {
+    selectedTable = tbl;
+    selectedRowId = null;
 
-    document.getElementById("selectedTableName").textContent =
-        `Table: ${name} (${currentRows.length} rows)`;
+    document.getElementById("selectedTableName").textContent = tbl;
 
+    renderTables();
     renderRows();
-    document.getElementById("rowJson").value = "";
+    clearRowEditor();
 }
 
 function renderRows() {
-    const container = document.getElementById("rowList");
+    const list = document.getElementById("rowList");
 
-    if (!currentRows.length) {
-        container.innerHTML = "<p><em>No rows in this table.</em></p>";
+    if (!dexieData || !selectedTable) {
+        list.innerHTML = "<p><em>No rows to display.</em></p>";
         return;
     }
 
-    container.innerHTML = "";
-    currentRows.forEach((row, idx) => {
+    const rows = smarhamrGetRows(dexieData, selectedTable);
+    if (!rows.length) {
+        list.innerHTML = "<p><em>No rows found.</em></p>";
+        return;
+    }
+
+    list.innerHTML = "";
+    rows.forEach(row => {
         const btn = document.createElement("button");
-        btn.textContent = `Row #${idx}`;
-        btn.onclick = () => selectRow(idx);
-        container.appendChild(btn);
+        btn.textContent = `Row #${row.id}`;
+        btn.onclick = () => selectRow(row.id);
+        if (row.id === selectedRowId) btn.classList.add("active");
+        list.appendChild(btn);
     });
 }
 
-function selectRow(index) {
-    currentRowIndex = index;
-    document.getElementById("rowJson").value =
-        JSON.stringify(currentRows[index], null, 2);
-}
+/* ============================================================
+   SELECT ROW + POPULATE JSON EDITOR
+   ============================================================ */
+function selectRow(rowId) {
+    selectedRowId = rowId;
 
-function applyRowEdit() {
-    if (currentRowIndex === null) {
-        alert("Select a row first.");
+    renderRows();
+
+    const rows = smarhamrGetRows(dexieData, selectedTable);
+    const row = rows.find(r => r.id === rowId);
+
+    if (!row) {
+        clearRowEditor();
         return;
     }
 
-    try {
-        const updated = JSON.parse(document.getElementById("rowJson").value);
-        currentRows[currentRowIndex] = updated;
-        smarhamrSetRows(dexieData, currentTable, currentRows);
-        smarhamrSaveState(dexieData, currentFileName);
-        alert("Row updated.");
-    } catch (err) {
-        alert("Invalid JSON.");
-    }
+    document.getElementById("rowJson").value =
+        JSON.stringify(row, null, 2);
 }
+
+/* Clear JSON editor */
+function clearRowEditor() {
+    document.getElementById("rowJson").value = "";
+}
+
+/* ============================================================
+   APPLY ROW EDIT
+   ============================================================ */
+function applyRowEdit() {
+    if (!dexieData || !selectedTable || selectedRowId == null) {
+        alert("No row selected.");
+        return;
+    }
+
+    let newJson;
+    try {
+        newJson = JSON.parse(document.getElementById("rowJson").value);
+    } catch {
+        alert("Invalid JSON.");
+        return;
+    }
+
+    const rows = smarhamrGetRows(dexieData, selectedTable);
+    const idx = rows.findIndex(r => r.id === selectedRowId);
+
+    if (idx === -1) {
+        alert("Row not found.");
+        return;
+    }
+
+    rows[idx] = newJson;
+    smarhamrSetRows(dexieData, selectedTable, rows);
+
+    alert("Row updated.");
+    renderRows();
+}
+/* ============================================================
+   SHORTCUT SCROLL (Dexie Editor uses panel IDs)
+   ============================================================ */
+function scrollToPanel(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ============================================================
+   CLIPBOARD PERSISTENCE
+   ============================================================ */
+function loadClipboard() {
+    const text = localStorage.getItem("smarhamrClipboard") || "";
+    document.getElementById("clipboardText").value = text;
+
+    const open = localStorage.getItem("smarhamrClipboardOpen") === "true";
+    setClipboardOpen(open);
+}
+
+function saveClipboard() {
+    const text = document.getElementById("clipboardText").value;
+    localStorage.setItem("smarhamrClipboard", text);
+}
+
+/* ============================================================
+   CLIPBOARD OPEN/CLOSE
+   ============================================================ */
+function setClipboardOpen(open) {
+    const panel = document.getElementById("clipboardPanel");
+    const toggle = document.getElementById("clipboardToggle");
+
+    if (open) {
+        panel.style.display = "block";
+        toggle.textContent = "< Hide";
+    } else {
+        panel.style.display = "none";
+        toggle.textContent = "> Show";
+    }
+
+    localStorage.setItem("smarhamrClipboardOpen", open ? "true" : "false");
+}
+
+/* ============================================================
+   CLIPBOARD EVENTS
+   ============================================================ */
+document.getElementById("clipboardTab").addEventListener("click", () => {
+    const open = localStorage.getItem("smarhamrClipboardOpen") === "true";
+    setClipboardOpen(!open);
+});
+
+document.getElementById("clipboardToggle").addEventListener("click", () => {
+    const open = localStorage.getItem("smarhamrClipboardOpen") === "true";
+    setClipboardOpen(!open);
+});
+
+document.getElementById("clipboardText").addEventListener("input", saveClipboard);
+
 </script>
 </body>
 </html>
