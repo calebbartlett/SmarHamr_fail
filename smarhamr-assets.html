@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SmarHamr — Asset Profiles</title>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body>
+
+<div id="topbar">
+    <div id="currentFileName">Scratch Dexie</div>
+
+    <div id="modeButtons">
+        <button class="modeBtn active" id="ccModeBtn" onclick="switchMode('cc')">Character‑Centric</button>
+        <button class="modeBtn" id="wcModeBtn" onclick="switchMode('wc')">World‑Centric</button>
+        <button class="modeBtn" id="deModeBtn" onclick="goDexie()">Dexie Editor</button>
+    </div>
+
+    <div id="branding">SmarHamr by yggdrasil75</div>
+</div>
+
+<div class="app-root">
+    <div class="left-nav">
+        <div class="panel">
+            <h3>File Management</h3>
+            <input type="file" id="dexieFile" accept=".json,.json.gz,.gz">
+            <button onclick="importDexie()">Load Export</button>
+            <button onclick="resetScratch()">Reset Scratch</button>
+            <button onclick="exportDexie()">Export</button>
+            <p id="dataSourceLabel"><em>Scratch not yet loaded.</em></p>
+        </div>
+
+        <div class="panel">
+            <h3>Asset Profiles</h3>
+            <div id="assetList" class="asset-list">
+                <p><em>No assets loaded.</em></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="panel">
+            <h3 id="assetOverviewTitle">Asset Overview (Character‑Centric)</h3>
+            <p id="assetOverview"><em>No asset selected.</em></p>
+        </div>
+
+        <div class="panel">
+            <h3 id="threadTitle">Thread Builder</h3>
+            <textarea id="threadLore" placeholder="Thread lore / context..."></textarea>
+        </div>
+
+        <div class="panel">
+            <h3>Memory Notes</h3>
+            <textarea id="threadMemory" placeholder="Memory notes..."></textarea>
+        </div>
+
+        <div class="panel">
+            <h3>Messages (freeform)</h3>
+            <textarea id="threadMessages" placeholder="Message planning..."></textarea>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+<script src="smarhamr-config.js"></script>
+<script>
+let currentMode = "cc";
+let currentAsset = null;
+
+window.addEventListener("load", async () => {
+    if (!dexieData && SmarHamrConfig.autoLoadScratchOnStartup) {
+        await smarhamrLoadScratch();
+        document.getElementById("dataSourceLabel").textContent = "Scratch Dexie loaded";
+        renderAssets();
+    } else {
+        updateCurrentFileNameUI();
+        renderAssets();
+    }
+});
+
+function switchMode(mode) {
+    currentMode = mode;
+    setActiveMode(mode);
+    const overviewTitle = document.getElementById("assetOverviewTitle");
+    const threadTitle = document.getElementById("threadTitle");
+
+    if (mode === "cc") {
+        overviewTitle.textContent = "Asset Overview (Character‑Centric)";
+        threadTitle.textContent = "Thread Builder (Character focus)";
+    } else if (mode === "wc") {
+        overviewTitle.textContent = "Asset Overview (World‑Centric)";
+        threadTitle.textContent = "Thread Builder (World focus)";
+    }
+}
+
+function goDexie() {
+    window.location.href = "dexie-editor.html";
+}
+
+function importDexie() {
+    const file = document.getElementById("dexieFile").files[0];
+    if (!file) {
+        alert("Choose a .json or .json.gz file first.");
+        return;
+    }
+
+    smarhamrLoadExport(file, data => {
+        document.getElementById("dataSourceLabel").textContent = `Loaded: ${file.name}`;
+        renderAssets();
+    });
+}
+
+function resetScratch() {
+    smarhamrLoadScratch().then(() => {
+        document.getElementById("dataSourceLabel").textContent = "Scratch Dexie loaded";
+        renderAssets();
+    });
+}
+
+function exportDexie() {
+    const prefix = prompt("Export filename prefix:", "assets");
+    smarhamrExport(prefix, dexieData);
+}
+
+function renderAssets() {
+    const list = document.getElementById("assetList");
+    if (!dexieData) {
+        list.innerHTML = "<p><em>No assets loaded.</em></p>";
+        return;
+    }
+
+    const rows = smarhamrGetRows(dexieData, "characters");
+    if (!rows.length) {
+        list.innerHTML = "<p><em>No assets found.</em></p>";
+        return;
+    }
+
+    list.innerHTML = "";
+    rows.forEach(row => {
+        const btn = document.createElement("button");
+        btn.textContent = row.name || `Asset #${row.id}`;
+        btn.onclick = () => selectAsset(row);
+        list.appendChild(btn);
+    });
+}
+
+function selectAsset(row) {
+    currentAsset = row;
+    const overview = document.getElementById("assetOverview");
+
+    if (currentMode === "cc") {
+        overview.textContent =
+            `Name: ${row.name || "Unnamed"}\n` +
+            `Model: ${row.modelName}\n` +
+            `Role: ${row.roleInstruction || "(none)"}`;
+    } else {
+        overview.textContent =
+            `World: ${row.name || "Unnamed"}\n` +
+            `Model: ${row.modelName}\n` +
+            `Description: ${row.roleInstruction || "(none)"}`;
+    }
+}
+</script>
+</body>
+</html>
