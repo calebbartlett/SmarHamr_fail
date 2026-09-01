@@ -1,0 +1,204 @@
+{
+  "format": "dexie-structure-reference",
+  "version": 1,
+
+  "tables": {
+    "characters": {
+      "schema": "++id, modelName, fitMessagesInContextMethod, uuid, creationTime, lastMessageTime, folderPath",
+      "description": "Stores both characters and worlds. Perchance does not distinguish them.",
+      "fields": {
+        "id": "Primary key",
+        "name": "Display name of character or world",
+        "roleInstruction": "Core behavior, personality, or world description",
+        "reminderMessage": "Notes the model should remember",
+        "generalWritingInstructions": "Custom writing instructions",
+        "messageWrapperStyle": "Optional wrapper style",
+        "imagePromptPrefix": "Prefix for image prompts",
+        "imagePromptSuffix": "Suffix for image prompts",
+        "imagePromptTriggers": "Trigger words for image prompts",
+        "fitMessagesInContextMethod": "summarizeOld | other",
+        "autoGenerateMemories": "none | v1",
+        "customCode": "Custom JS code (Perchance feature)",
+        "messageInputPlaceholder": "Placeholder text",
+        "metaTitle": "SEO title",
+        "metaDescription": "SEO description",
+        "metaImage": "SEO image",
+        "modelName": "AI model name",
+        "temperature": "Model temperature",
+        "maxTokensPerMessage": "Token limit",
+        "textEmbeddingModelName": "Embedding model",
+        "initialMessages": "Array of initial AI messages",
+        "shortcutButtons": "Array of UI shortcut buttons",
+        "loreBookUrls": "Array of lore book URLs",
+        "avatar": "Avatar metadata",
+        "scene": "Scene metadata (background, music)",
+        "userCharacter": "User-specific avatar and reminderMessage",
+        "systemCharacter": "System-specific avatar",
+        "streamingResponse": "Boolean",
+        "folderPath": "Folder path",
+        "customData": "Custom metadata",
+        "uuid": "Unique identifier",
+        "creationTime": "Timestamp",
+        "lastMessageTime": "Timestamp"
+      },
+      "specialSemantics": {
+        "worldsAreCharacters": true,
+        "notes": "World assets are stored in the characters table with world-like roleInstruction."
+      }
+    },
+
+    "threads": {
+      "schema": "++id, name, characterId, creationTime, lastMessageTime, lastViewTime, folderPath",
+      "description": "Conversation threads rooted in a character or world.",
+      "fields": {
+        "id": "Primary key",
+        "name": "Thread name",
+        "characterId": "Root asset (character or world)",
+        "creationTime": "Timestamp",
+        "lastMessageTime": "Timestamp",
+        "lastViewTime": "Timestamp",
+        "isFav": "Favorite flag",
+        "userCharacter": "User avatar metadata",
+        "systemCharacter": "System avatar metadata",
+        "character": "Character avatar metadata",
+        "modelName": "AI model name",
+        "customCodeWindow": "UI metadata",
+        "customData": "Custom metadata",
+        "folderPath": "Folder path",
+        "loreBookId": "Linked lore book",
+        "textEmbeddingModelName": "Embedding model",
+        "userMessagesSentHistory": "Array of user messages",
+        "unsentMessageText": "Draft text",
+        "shortcutButtons": "Array of shortcut buttons",
+        "currentSummaryHashChain": "Summary chain"
+      },
+      "relationships": {
+        "characterId": "characters.id"
+      }
+    },
+
+    "messages": {
+      "schema": "++id, threadId, characterId, creationTime, order",
+      "description": "Individual messages in a thread.",
+      "fields": {
+        "id": "Primary key",
+        "threadId": "Thread reference",
+        "characterId": "Author reference",
+        "message": "Message text",
+        "hiddenFrom": "Array of hidden-from flags",
+        "expectsReply": "Boolean",
+        "creationTime": "Timestamp",
+        "variants": "Array of variants",
+        "memoryIdBatchesUsed": "Memory batches",
+        "loreIdsUsed": "Lore IDs",
+        "summaryHashUsed": "Summary hash",
+        "summariesUsed": "Summaries used",
+        "summariesEndingHere": "Summaries ending here",
+        "memoriesEndingHere": "Memories ending here",
+        "memoryQueriesUsed": "Memory queries",
+        "messageIdsUsed": "Referenced message IDs",
+        "name": "Optional name",
+        "scene": "Scene metadata",
+        "avatar": "Avatar metadata",
+        "customData": "Custom metadata",
+        "wrapperStyle": "Wrapper style",
+        "order": "Message order",
+        "instruction": "System instruction"
+      },
+      "specialSemantics": {
+        "characterId": {
+          ">=0": "AI character",
+          "-1": "User",
+          "-2": "System/Narrator"
+        }
+      },
+      "relationships": {
+        "threadId": "threads.id",
+        "characterId": "characters.id or special values"
+      }
+    },
+
+    "misc": {
+      "schema": "key",
+      "description": "Global UI/user settings.",
+      "fields": {
+        "key": "Setting name",
+        "value": "Setting value"
+      }
+    },
+
+    "summaries": {
+      "schema": "hash, threadId",
+      "description": "Conversation summaries (empty in many exports).",
+      "fields": {
+        "hash": "Summary hash",
+        "threadId": "Thread reference"
+      }
+    },
+
+    "memories": {
+      "schema": "++id, [summaryHash+threadId], [characterId+status], [threadId+status], [threadId+index], threadId",
+      "description": "Memory entries (empty in many exports).",
+      "fields": {
+        "id": "Primary key",
+        "summaryHash": "Summary hash",
+        "threadId": "Thread reference",
+        "characterId": "Character reference",
+        "status": "Memory status",
+        "index": "Memory index"
+      }
+    },
+
+    "lore": {
+      "schema": "++id, bookId, bookUrl",
+      "description": "Lore book metadata.",
+      "fields": {
+        "id": "Primary key",
+        "bookId": "Lore book ID",
+        "bookUrl": "Lore book URL"
+      }
+    },
+
+    "textEmbeddingCache": {
+      "schema": "++id, textHash, &[textHash+modelName]",
+      "description": "Embedding cache (empty in many exports).",
+      "fields": {
+        "id": "Primary key",
+        "textHash": "Hash of text",
+        "modelName": "Embedding model"
+      }
+    },
+
+    "textCompressionCache": {
+      "schema": "++id, uncompressedTextHash, &[uncompressedTextHash+modelName+tokenLimit]",
+      "description": "Compression cache (empty in many exports).",
+      "fields": {
+        "id": "Primary key",
+        "uncompressedTextHash": "Hash of original text",
+        "modelName": "Model name",
+        "tokenLimit": "Token limit"
+      }
+    }
+  },
+
+  "relationships": {
+    "characters→threads": "threads.characterId = characters.id",
+    "threads→messages": "messages.threadId = threads.id",
+    "characters→messages": "messages.characterId = characters.id or special (-1, -2)"
+  },
+
+  "threadRooting": {
+    "rule": "Thread is rooted in characters[characterId]",
+    "note": "Worlds are stored in characters table"
+  },
+
+  "messageOrdering": {
+    "rule": "messages.order determines chronological sequence"
+  },
+
+  "exportImport": {
+    "perchanceExportsAreGzip": true,
+    "smarhamrExportsMustBeGzip": true,
+    "fileExtensions": [".json", ".json.gz", ".gz"]
+  }
+}
