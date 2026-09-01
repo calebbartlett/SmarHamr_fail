@@ -202,7 +202,15 @@
    ============================================================ */
 dexieData = window.dexieData || null;
 currentFileName = window.currentFileName || "Scratch Dexie";
+
+// ensure global is a string, not a DOM element
+if (typeof currentFileName !== "string") {
+    currentFileName = "Scratch Dexie";
+}
+window.currentFileName = currentFileName;
+
 let selectedAssetId = null;
+
 
 
 /* ============================================================
@@ -230,8 +238,10 @@ function loadExport() {
 
     smarhamrLoadExport(file, data => {
         dexieData = data;
-        currentFileName = file.name;
-        updateCurrentFileNameUI();
+             currentFileName = file.name;
+             window.currentFileName = currentFileName;
+             updateCurrentFileNameUI();
+
         renderAssets();
     });
 }
@@ -239,7 +249,9 @@ function loadExport() {
 function resetScratch() {
     smarhamrLoadScratch().then(() => {
         currentFileName = "Scratch Dexie";
+        window.currentFileName = currentFileName;
         updateCurrentFileNameUI();
+
         renderAssets();
     });
 }
