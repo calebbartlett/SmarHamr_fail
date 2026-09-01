@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>SmarHamr — World‑Centric Mode</title>
 <link rel="stylesheet" href="ui.css">
+
 <style>
 /* Workspace + clipboard layout */
 .app-root {
@@ -55,7 +56,7 @@
     border-left: 1px solid #333;
     padding: 10px;
     box-sizing: border-box;
-    display: none; /* collapsed by default */
+    display: none;
 }
 
 .clipboard-header {
@@ -89,6 +90,7 @@
 }
 </style>
 </head>
+
 <body>
 
 <!-- TOP BAR -->
@@ -129,7 +131,7 @@
     <!-- CENTER WORKSPACE + RIGHT CLIPBOARD -->
     <div class="workspace-shell">
 
-        <!-- MAIN WORKSPACE (stacked panels) -->
+        <!-- MAIN WORKSPACE -->
         <div class="workspace">
 
             <!-- Shortcuts -->
@@ -156,6 +158,7 @@
             <!-- Behavior Panel -->
             <div class="panel" id="behaviorPanel">
                 <h3>World Behavior</h3>
+
                 <label>World Description (roleInstruction)</label>
                 <textarea id="roleInstruction"></textarea>
 
@@ -189,6 +192,7 @@
             <!-- Prompting Panel -->
             <div class="panel" id="promptingPanel">
                 <h3>Prompting</h3>
+
                 <label>Image Prompt Prefix</label>
                 <textarea id="imagePromptPrefix"></textarea>
 
@@ -207,6 +211,7 @@
             <!-- Visual Identity Panel -->
             <div class="panel" id="visualPanel">
                 <h3>World Visual Identity</h3>
+
                 <label>Avatar (JSON)</label>
                 <textarea id="avatar"></textarea>
 
@@ -268,9 +273,9 @@
 
     </div>
 </div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <script src="smarhamr-config.js"></script>
+
 <script>
 let selectedAssetId = null;
 
@@ -432,53 +437,6 @@ function savePrompting() {
     smarhamrSaveState(dexieData, currentFileName);
     alert("Prompting saved.");
 }
-
-/* Visual */
-function populateVisual(row) {
-    document.getElementById("avatar").value = row.avatar ? JSON.stringify(row.avatar, null, 2) : "";
-    document.getElementById("scene").value = row.scene ? JSON.stringify(row.scene, null, 2) : "";
-    document.getElementById("userCharacter").value = row.userCharacter ? JSON.stringify(row.userCharacter, null, 2) : "";
-    document.getElementById("systemCharacter").value = row.systemCharacter ? JSON.stringify(row.systemCharacter, null, 2) : "";
-}
-
-function saveVisual() {
-    if (!dexieData || selectedAssetId == null) return;
-    const rows = smarhamrGetRows(dexieData, "characters");
-    const row = rows.find(r => r.id === selectedAssetId);
-    if (!row) return;
-
-    try { row.avatar = JSON.parse(document.getElementById("avatar").value || "null"); } catch {}
-    try { row.scene = JSON.parse(document.getElementById("scene").value || "null"); } catch {}
-    try { row.userCharacter = JSON.parse(document.getElementById("userCharacter").value || "null"); } catch {}
-    try { row.systemCharacter = JSON.parse(document.getElementById("systemCharacter").value || "null"); } catch {}
-
-    smarhamrSetRows(dexieData, "characters", rows);
-    smarhamrSaveState(dexieData, currentFileName);
-    alert("Visual identity saved.");
-}
-
-/* Initial Messages */
-function populateInitialMessages(row) {
-    document.getElementById("initialMessages").value =
-        row.initialMessages ? JSON.stringify(row.initialMessages, null, 2) : "";
-}
-
-function saveInitialMessages() {
-    if (!dexieData || selectedAssetId == null) return;
-    const rows = smarhamrGetRows(dexieData, "characters");
-    const row = rows.find(r => r.id === selectedAssetId);
-    if (!row) return;
-
-    try {
-        row.initialMessages = JSON.parse(document.getElementById("initialMessages").value || "[]");
-        smarhamrSetRows(dexieData, "characters", rows);
-        smarhamrSaveState(dexieData, currentFileName);
-        alert("Initial messages saved.");
-    } catch {
-        alert("Invalid JSON for initial messages.");
-    }
-}
-
 /* Lore */
 function populateLore(row) {
     document.getElementById("loreBookUrls").value =
@@ -542,6 +500,7 @@ function saveClipboard() {
 function setClipboardOpen(open) {
     const panel = document.getElementById("clipboardPanel");
     const toggle = document.getElementById("clipboardToggle");
+
     if (open) {
         panel.style.display = "block";
         toggle.textContent = "< Hide";
@@ -549,6 +508,7 @@ function setClipboardOpen(open) {
         panel.style.display = "none";
         toggle.textContent = "> Show";
     }
+
     localStorage.setItem("smarhamrClipboardOpen", open ? "true" : "false");
 }
 
@@ -564,3 +524,6 @@ document.getElementById("clipboardToggle").addEventListener("click", () => {
 });
 
 document.getElementById("clipboardText").addEventListener("input", saveClipboard);
+</script>
+</body>
+</html>
