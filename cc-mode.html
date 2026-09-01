@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>SmarHamr — Character‑Centric Mode</title>
 <link rel="stylesheet" href="ui.css">
+
 <style>
 /* Workspace + clipboard layout */
 .app-root {
@@ -55,7 +56,7 @@
     border-left: 1px solid #333;
     padding: 10px;
     box-sizing: border-box;
-    display: none; /* collapsed by default */
+    display: none;
 }
 
 .clipboard-header {
@@ -89,6 +90,7 @@
 }
 </style>
 </head>
+
 <body>
 
 <!-- TOP BAR -->
@@ -111,9 +113,16 @@
 
         <div class="panel">
             <h3>File Management</h3>
+
             <input type="file" id="dexieFile" accept=".json,.json.gz,.gz">
-            <button onclick="importDexie()">Load Export</button>
+
+            <button onclick="loadExport()">Load Export</button>
             <button onclick="resetScratch()">Reset Scratch</button>
+
+            <!-- NEW: Save to Memory -->
+            <button onclick="saveToMemory()">Save to Memory</button>
+
+            <!-- Existing: Export -->
             <button onclick="exportDexie()">Export</button>
         </div>
 
@@ -129,7 +138,7 @@
     <!-- CENTER WORKSPACE + RIGHT CLIPBOARD -->
     <div class="workspace-shell">
 
-        <!-- MAIN WORKSPACE (stacked panels) -->
+        <!-- MAIN WORKSPACE -->
         <div class="workspace">
 
             <!-- Shortcuts -->
@@ -149,13 +158,14 @@
 
             <!-- Identity Panel -->
             <div class="panel" id="identityPanel">
-                <h3>Identity</h3>
+                <h3>Character Identity</h3>
                 <pre id="identityView"><em>No asset selected.</em></pre>
             </div>
 
             <!-- Behavior Panel -->
             <div class="panel" id="behaviorPanel">
-                <h3>Behavior</h3>
+                <h3>Character Behavior</h3>
+
                 <label>Role Instruction</label>
                 <textarea id="roleInstruction"></textarea>
 
@@ -189,6 +199,7 @@
             <!-- Prompting Panel -->
             <div class="panel" id="promptingPanel">
                 <h3>Prompting</h3>
+
                 <label>Image Prompt Prefix</label>
                 <textarea id="imagePromptPrefix"></textarea>
 
@@ -207,6 +218,7 @@
             <!-- Visual Identity Panel -->
             <div class="panel" id="visualPanel">
                 <h3>Visual Identity</h3>
+
                 <label>Avatar (JSON)</label>
                 <textarea id="avatar"></textarea>
 
@@ -243,10 +255,10 @@
                 <button onclick="saveCustomCode()">Save Custom Code</button>
             </div>
 
-            <!-- Thread Builder Panel (scratch, not yet wired to threads table) -->
+            <!-- Thread Builder Panel -->
             <div class="panel" id="threadPanel">
-                <h3>Thread Builder (Character focus)</h3>
-                <textarea id="threadLore" placeholder="Thread lore / context..."></textarea>
+                <h3>Thread Builder</h3>
+                <textarea id="threadLore" placeholder="Thread context..."></textarea>
                 <textarea id="threadMemory" placeholder="Memory notes..."></textarea>
                 <textarea id="threadMessages" placeholder="Message planning..."></textarea>
             </div>
@@ -268,53 +280,81 @@
 
     </div>
 </div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <script src="smarhamr-config.js"></script>
+
 <script>
+/* ============================================================
+   GLOBAL STATE — shared across all modes
+   ============================================================ */
+let dexieData = window.dexieData || null;
+let currentFileName = window.currentFileName || "Scratch Dexie";
 let selectedAssetId = null;
 
-/* Startup */
-window.addEventListener("load", async () => {
-    const hasState = smarhamrLoadState();
-    if (!hasState && SmarHamrConfig.autoLoadScratchOnStartup) {
-        await smarhamrLoadScratch();
-    } else {
-        updateCurrentFileNameUI();
-    }
+/* ============================================================
+   STARTUP — no auto-load from memory
+   ============================================================ */
+window.addEventListener("load", () => {
+    updateCurrentFileNameUI();
     renderAssets();
     loadClipboard();
 });
 
-/* Navigation */
+/* ============================================================
+   NAVIGATION — preserve in-RAM dexieData across modes
+   ============================================================ */
 function goCC() { window.location.href = "cc-mode.html"; }
 function goWC() { window.location.href = "wc-mode.html"; }
 function goDexie() { window.location.href = "dexie-editor.html"; }
 
-/* File management */
-function importDexie() {
+/* ============================================================
+   FILE MANAGEMENT — Load, Reset, Save to Memory, Export
+   ============================================================ */
+function loadExport() {
     const file = document.getElementById("dexieFile").files[0];
     if (!file) { alert("Choose a file first."); return; }
 
     smarhamrLoadExport(file, data => {
+        dexieData = data;
+        currentFileName = file.name;
+        updateCurrentFileNameUI();
         renderAssets();
     });
 }
 
 function resetScratch() {
     smarhamrLoadScratch().then(() => {
+        currentFileName = "Scratch Dexie";
+        updateCurrentFileNameUI();
         renderAssets();
     });
 }
 
+/* NEW: Save to Memory (manual persistence) */
+function saveToMemory() {
+    if (!dexieData) {
+        alert("No Dexie data loaded.");
+        return;
+    }
+    smarhamrSaveState(dexieData, currentFileName);
+    alert("Saved to memory.");
+}
+
 function exportDexie() {
+    if (!dexieData) {
+        alert("No Dexie data loaded.");
+        return;
+    }
     const prefix = prompt("Export filename prefix:", "assets");
     smarhamrExport(prefix, dexieData);
 }
 
-/* Asset list */
+/* ============================================================
+   ASSET LIST
+   ============================================================ */
 function renderAssets() {
     const list = document.getElementById("assetList");
+
     if (!dexieData) {
         list.innerHTML = "<p><em>No assets loaded.</em></p>";
         return;
@@ -336,7 +376,9 @@ function renderAssets() {
     });
 }
 
-/* Select asset + populate panels */
+/* ============================================================
+   SELECT ASSET + POPULATE PANELS
+   ============================================================ */
 function selectAsset(row) {
     selectedAssetId = row.id;
     highlightSelectedAsset();
@@ -360,7 +402,9 @@ function highlightSelectedAsset() {
     });
 }
 
-/* Identity view */
+/* ============================================================
+   IDENTITY PANEL
+   ============================================================ */
 function populateIdentity(row) {
     const el = document.getElementById("identityView");
     const identity = {
@@ -375,7 +419,9 @@ function populateIdentity(row) {
     el.textContent = JSON.stringify(identity, null, 2);
 }
 
-/* Behavior */
+/* ============================================================
+   BEHAVIOR PANEL
+   ============================================================ */
 function populateBehavior(row) {
     document.getElementById("roleInstruction").value = row.roleInstruction || "";
     document.getElementById("generalWritingInstructions").value = row.generalWritingInstructions || "";
@@ -390,9 +436,9 @@ function populateBehavior(row) {
 
 function saveBehavior() {
     if (!dexieData || selectedAssetId == null) return;
+
     const rows = smarhamrGetRows(dexieData, "characters");
     const row = rows.find(r => r.id === selectedAssetId);
-    if (!row) return;
 
     row.roleInstruction = document.getElementById("roleInstruction").value;
     row.generalWritingInstructions = document.getElementById("generalWritingInstructions").value;
@@ -405,11 +451,12 @@ function saveBehavior() {
     row.textEmbeddingModelName = document.getElementById("textEmbeddingModelName").value;
 
     smarhamrSetRows(dexieData, "characters", rows);
-    smarhamrSaveState(dexieData, currentFileName);
     alert("Behavior saved.");
 }
 
-/* Prompting */
+/* ============================================================
+   PROMPTING PANEL
+   ============================================================ */
 function populatePrompting(row) {
     document.getElementById("imagePromptPrefix").value = row.imagePromptPrefix || "";
     document.getElementById("imagePromptSuffix").value = row.imagePromptSuffix || "";
@@ -419,9 +466,9 @@ function populatePrompting(row) {
 
 function savePrompting() {
     if (!dexieData || selectedAssetId == null) return;
+
     const rows = smarhamrGetRows(dexieData, "characters");
     const row = rows.find(r => r.id === selectedAssetId);
-    if (!row) return;
 
     row.imagePromptPrefix = document.getElementById("imagePromptPrefix").value;
     row.imagePromptSuffix = document.getElementById("imagePromptSuffix").value;
@@ -429,23 +476,30 @@ function savePrompting() {
     row.messageInputPlaceholder = document.getElementById("messageInputPlaceholder").value;
 
     smarhamrSetRows(dexieData, "characters", rows);
-    smarhamrSaveState(dexieData, currentFileName);
     alert("Prompting saved.");
 }
-
-/* Visual */
+/* ============================================================
+   VISUAL PANEL
+   ============================================================ */
 function populateVisual(row) {
-    document.getElementById("avatar").value = row.avatar ? JSON.stringify(row.avatar, null, 2) : "";
-    document.getElementById("scene").value = row.scene ? JSON.stringify(row.scene, null, 2) : "";
-    document.getElementById("userCharacter").value = row.userCharacter ? JSON.stringify(row.userCharacter, null, 2) : "";
-    document.getElementById("systemCharacter").value = row.systemCharacter ? JSON.stringify(row.systemCharacter, null, 2) : "";
+    document.getElementById("avatar").value =
+        row.avatar ? JSON.stringify(row.avatar, null, 2) : "";
+
+    document.getElementById("scene").value =
+        row.scene ? JSON.stringify(row.scene, null, 2) : "";
+
+    document.getElementById("userCharacter").value =
+        row.userCharacter ? JSON.stringify(row.userCharacter, null, 2) : "";
+
+    document.getElementById("systemCharacter").value =
+        row.systemCharacter ? JSON.stringify(row.systemCharacter, null, 2) : "";
 }
 
 function saveVisual() {
     if (!dexieData || selectedAssetId == null) return;
+
     const rows = smarhamrGetRows(dexieData, "characters");
     const row = rows.find(r => r.id === selectedAssetId);
-    if (!row) return;
 
     try { row.avatar = JSON.parse(document.getElementById("avatar").value || "null"); } catch {}
     try { row.scene = JSON.parse(document.getElementById("scene").value || "null"); } catch {}
@@ -453,11 +507,12 @@ function saveVisual() {
     try { row.systemCharacter = JSON.parse(document.getElementById("systemCharacter").value || "null"); } catch {}
 
     smarhamrSetRows(dexieData, "characters", rows);
-    smarhamrSaveState(dexieData, currentFileName);
     alert("Visual identity saved.");
 }
 
-/* Initial Messages */
+/* ============================================================
+   INITIAL MESSAGES PANEL
+   ============================================================ */
 function populateInitialMessages(row) {
     document.getElementById("initialMessages").value =
         row.initialMessages ? JSON.stringify(row.initialMessages, null, 2) : "";
@@ -465,21 +520,22 @@ function populateInitialMessages(row) {
 
 function saveInitialMessages() {
     if (!dexieData || selectedAssetId == null) return;
+
     const rows = smarhamrGetRows(dexieData, "characters");
     const row = rows.find(r => r.id === selectedAssetId);
-    if (!row) return;
 
     try {
         row.initialMessages = JSON.parse(document.getElementById("initialMessages").value || "[]");
         smarhamrSetRows(dexieData, "characters", rows);
-        smarhamrSaveState(dexieData, currentFileName);
         alert("Initial messages saved.");
     } catch {
         alert("Invalid JSON for initial messages.");
     }
 }
 
-/* Lore */
+/* ============================================================
+   LORE PANEL
+   ============================================================ */
 function populateLore(row) {
     document.getElementById("loreBookUrls").value =
         row.loreBookUrls ? JSON.stringify(row.loreBookUrls, null, 2) : "";
@@ -487,44 +543,59 @@ function populateLore(row) {
 
 function saveLore() {
     if (!dexieData || selectedAssetId == null) return;
+
     const rows = smarhamrGetRows(dexieData, "characters");
     const row = rows.find(r => r.id === selectedAssetId);
-    if (!row) return;
 
     try {
         row.loreBookUrls = JSON.parse(document.getElementById("loreBookUrls").value || "[]");
         smarhamrSetRows(dexieData, "characters", rows);
-        smarhamrSaveState(dexieData, currentFileName);
         alert("Lore saved.");
     } catch {
         alert("Invalid JSON for loreBookUrls.");
     }
 }
 
-/* Custom Code */
+/* ============================================================
+   CUSTOM CODE PANEL
+   ============================================================ */
 function populateCustomCode(row) {
     document.getElementById("customCode").value = row.customCode || "";
 }
 
 function saveCustomCode() {
     if (!dexieData || selectedAssetId == null) return;
+
     const rows = smarhamrGetRows(dexieData, "characters");
     const row = rows.find(r => r.id === selectedAssetId);
-    if (!row) return;
 
     row.customCode = document.getElementById("customCode").value;
     smarhamrSetRows(dexieData, "characters", rows);
-    smarhamrSaveState(dexieData, currentFileName);
     alert("Custom code saved.");
 }
 
-/* Shortcuts scroll */
+/* ============================================================
+   THREAD BUILDER (scratchpad only)
+   ============================================================ */
+function populateThreadBuilder(row) {
+    // This mode does NOT persist thread builder fields.
+    // They are scratchpad-only by design.
+    document.getElementById("threadLore").value = "";
+    document.getElementById("threadMemory").value = "";
+    document.getElementById("threadMessages").value = "";
+}
+
+/* ============================================================
+   SHORTCUT SCROLL
+   ============================================================ */
 function scrollToPanel(id) {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-/* Clipboard persistence */
+/* ============================================================
+   CLIPBOARD PERSISTENCE
+   ============================================================ */
 function loadClipboard() {
     const text = localStorage.getItem("smarhamrClipboard") || "";
     document.getElementById("clipboardText").value = text;
@@ -538,10 +609,13 @@ function saveClipboard() {
     localStorage.setItem("smarhamrClipboard", text);
 }
 
-/* Clipboard open/close */
+/* ============================================================
+   CLIPBOARD OPEN/CLOSE
+   ============================================================ */
 function setClipboardOpen(open) {
     const panel = document.getElementById("clipboardPanel");
     const toggle = document.getElementById("clipboardToggle");
+
     if (open) {
         panel.style.display = "block";
         toggle.textContent = "< Hide";
@@ -549,10 +623,13 @@ function setClipboardOpen(open) {
         panel.style.display = "none";
         toggle.textContent = "> Show";
     }
+
     localStorage.setItem("smarhamrClipboardOpen", open ? "true" : "false");
 }
 
-/* Clipboard events */
+/* ============================================================
+   CLIPBOARD EVENTS
+   ============================================================ */
 document.getElementById("clipboardTab").addEventListener("click", () => {
     const open = localStorage.getItem("smarhamrClipboardOpen") === "true";
     setClipboardOpen(!open);
@@ -564,6 +641,7 @@ document.getElementById("clipboardToggle").addEventListener("click", () => {
 });
 
 document.getElementById("clipboardText").addEventListener("input", saveClipboard);
+
 </script>
 </body>
 </html>
