@@ -482,4 +482,85 @@ function saveInitialMessages() {
 /* Lore */
 function populateLore(row) {
     document.getElementById("loreBookUrls").value =
-        row.loreBookUrls ? JSON.stringify(row.loreBookUrls, null,
+        row.loreBookUrls ? JSON.stringify(row.loreBookUrls, null, 2) : "";
+}
+
+function saveLore() {
+    if (!dexieData || selectedAssetId == null) return;
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+    if (!row) return;
+
+    try {
+        row.loreBookUrls = JSON.parse(document.getElementById("loreBookUrls").value || "[]");
+        smarhamrSetRows(dexieData, "characters", rows);
+        smarhamrSaveState(dexieData, currentFileName);
+        alert("Lore saved.");
+    } catch {
+        alert("Invalid JSON for loreBookUrls.");
+    }
+}
+
+/* Custom Code */
+function populateCustomCode(row) {
+    document.getElementById("customCode").value = row.customCode || "";
+}
+
+function saveCustomCode() {
+    if (!dexieData || selectedAssetId == null) return;
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+    if (!row) return;
+
+    row.customCode = document.getElementById("customCode").value;
+    smarhamrSetRows(dexieData, "characters", rows);
+    smarhamrSaveState(dexieData, currentFileName);
+    alert("Custom code saved.");
+}
+
+/* Shortcuts scroll */
+function scrollToPanel(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* Clipboard persistence */
+function loadClipboard() {
+    const text = localStorage.getItem("smarhamrClipboard") || "";
+    document.getElementById("clipboardText").value = text;
+
+    const open = localStorage.getItem("smarhamrClipboardOpen") === "true";
+    setClipboardOpen(open);
+}
+
+function saveClipboard() {
+    const text = document.getElementById("clipboardText").value;
+    localStorage.setItem("smarhamrClipboard", text);
+}
+
+/* Clipboard open/close */
+function setClipboardOpen(open) {
+    const panel = document.getElementById("clipboardPanel");
+    const toggle = document.getElementById("clipboardToggle");
+    if (open) {
+        panel.style.display = "block";
+        toggle.textContent = "< Hide";
+    } else {
+        panel.style.display = "none";
+        toggle.textContent = "> Show";
+    }
+    localStorage.setItem("smarhamrClipboardOpen", open ? "true" : "false");
+}
+
+/* Clipboard events */
+document.getElementById("clipboardTab").addEventListener("click", () => {
+    const open = localStorage.getItem("smarhamrClipboardOpen") === "true";
+    setClipboardOpen(!open);
+});
+
+document.getElementById("clipboardToggle").addEventListener("click", () => {
+    const open = localStorage.getItem("smarhamrClipboardOpen") === "true";
+    setClipboardOpen(!open);
+});
+
+document.getElementById("clipboardText").addEventListener("input", saveClipboard);
