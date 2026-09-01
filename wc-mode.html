@@ -113,9 +113,16 @@
 
         <div class="panel">
             <h3>File Management</h3>
+
             <input type="file" id="dexieFile" accept=".json,.json.gz,.gz">
-            <button onclick="importDexie()">Load Export</button>
+
+            <button onclick="loadExport()">Load Export</button>
             <button onclick="resetScratch()">Reset Scratch</button>
+
+            <!-- NEW: Save to Memory -->
+            <button onclick="saveToMemory()">Save to Memory</button>
+
+            <!-- Existing: Export -->
             <button onclick="exportDexie()">Export</button>
         </div>
 
@@ -277,49 +284,77 @@
 <script src="smarhamr-config.js"></script>
 
 <script>
+/* ============================================================
+   GLOBAL STATE — shared across all modes
+   ============================================================ */
+let dexieData = window.dexieData || null;
+let currentFileName = window.currentFileName || "Scratch Dexie";
 let selectedAssetId = null;
 
-/* Startup */
-window.addEventListener("load", async () => {
-    const hasState = smarhamrLoadState();
-    if (!hasState && SmarHamrConfig.autoLoadScratchOnStartup) {
-        await smarhamrLoadScratch();
-    } else {
-        updateCurrentFileNameUI();
-    }
+/* ============================================================
+   STARTUP — no auto-load from memory
+   ============================================================ */
+window.addEventListener("load", () => {
+    updateCurrentFileNameUI();
     renderAssets();
     loadClipboard();
 });
 
-/* Navigation */
+/* ============================================================
+   NAVIGATION — preserve in-RAM dexieData across modes
+   ============================================================ */
 function goCC() { window.location.href = "cc-mode.html"; }
 function goWC() { window.location.href = "wc-mode.html"; }
 function goDexie() { window.location.href = "dexie-editor.html"; }
 
-/* File management */
-function importDexie() {
+/* ============================================================
+   FILE MANAGEMENT — Load, Reset, Save to Memory, Export
+   ============================================================ */
+function loadExport() {
     const file = document.getElementById("dexieFile").files[0];
     if (!file) { alert("Choose a file first."); return; }
 
     smarhamrLoadExport(file, data => {
+        dexieData = data;
+        currentFileName = file.name;
+        updateCurrentFileNameUI();
         renderAssets();
     });
 }
 
 function resetScratch() {
     smarhamrLoadScratch().then(() => {
+        currentFileName = "Scratch Dexie";
+        updateCurrentFileNameUI();
         renderAssets();
     });
 }
 
+/* NEW: Save to Memory (manual persistence) */
+function saveToMemory() {
+    if (!dexieData) {
+        alert("No Dexie data loaded.");
+        return;
+    }
+    smarhamrSaveState(dexieData, currentFileName);
+    alert("Saved to memory.");
+}
+
 function exportDexie() {
+    if (!dexieData) {
+        alert("No Dexie data loaded.");
+        return;
+    }
     const prefix = prompt("Export filename prefix:", "assets");
     smarhamrExport(prefix, dexieData);
 }
 
-/* Asset list */
+/* ============================================================
+   ASSET LIST
+   ============================================================ */
 function renderAssets() {
     const list = document.getElementById("assetList");
+
     if (!dexieData) {
         list.innerHTML = "<p><em>No assets loaded.</em></p>";
         return;
@@ -341,7 +376,9 @@ function renderAssets() {
     });
 }
 
-/* Select asset + populate panels */
+/* ============================================================
+   SELECT ASSET + POPULATE PANELS
+   ============================================================ */
 function selectAsset(row) {
     selectedAssetId = row.id;
     highlightSelectedAsset();
@@ -365,7 +402,9 @@ function highlightSelectedAsset() {
     });
 }
 
-/* Identity view */
+/* ============================================================
+   IDENTITY PANEL
+   ============================================================ */
 function populateIdentity(row) {
     const el = document.getElementById("identityView");
     const identity = {
@@ -380,7 +419,9 @@ function populateIdentity(row) {
     el.textContent = JSON.stringify(identity, null, 2);
 }
 
-/* Behavior */
+/* ============================================================
+   WORLD BEHAVIOR PANEL
+   ============================================================ */
 function populateBehavior(row) {
     document.getElementById("roleInstruction").value = row.roleInstruction || "";
     document.getElementById("generalWritingInstructions").value = row.generalWritingInstructions || "";
@@ -395,9 +436,9 @@ function populateBehavior(row) {
 
 function saveBehavior() {
     if (!dexieData || selectedAssetId == null) return;
+
     const rows = smarhamrGetRows(dexieData, "characters");
     const row = rows.find(r => r.id === selectedAssetId);
-    if (!row) return;
 
     row.roleInstruction = document.getElementById("roleInstruction").value;
     row.generalWritingInstructions = document.getElementById("generalWritingInstructions").value;
@@ -410,11 +451,12 @@ function saveBehavior() {
     row.textEmbeddingModelName = document.getElementById("textEmbeddingModelName").value;
 
     smarhamrSetRows(dexieData, "characters", rows);
-    smarhamrSaveState(dexieData, currentFileName);
     alert("World behavior saved.");
 }
 
-/* Prompting */
+/* ============================================================
+   PROMPTING PANEL
+   ============================================================ */
 function populatePrompting(row) {
     document.getElementById("imagePromptPrefix").value = row.imagePromptPrefix || "";
     document.getElementById("imagePromptSuffix").value = row.imagePromptSuffix || "";
@@ -424,9 +466,9 @@ function populatePrompting(row) {
 
 function savePrompting() {
     if (!dexieData || selectedAssetId == null) return;
+
     const rows = smarhamrGetRows(dexieData, "characters");
     const row = rows.find(r => r.id === selectedAssetId);
-    if (!row) return;
 
     row.imagePromptPrefix = document.getElementById("imagePromptPrefix").value;
     row.imagePromptSuffix = document.getElementById("imagePromptSuffix").value;
@@ -434,10 +476,66 @@ function savePrompting() {
     row.messageInputPlaceholder = document.getElementById("messageInputPlaceholder").value;
 
     smarhamrSetRows(dexieData, "characters", rows);
-    smarhamrSaveState(dexieData, currentFileName);
     alert("Prompting saved.");
 }
-/* Lore */
+/* ============================================================
+   VISUAL PANEL
+   ============================================================ */
+function populateVisual(row) {
+    document.getElementById("avatar").value =
+        row.avatar ? JSON.stringify(row.avatar, null, 2) : "";
+
+    document.getElementById("scene").value =
+        row.scene ? JSON.stringify(row.scene, null, 2) : "";
+
+    document.getElementById("userCharacter").value =
+        row.userCharacter ? JSON.stringify(row.userCharacter, null, 2) : "";
+
+    document.getElementById("systemCharacter").value =
+        row.systemCharacter ? JSON.stringify(row.systemCharacter, null, 2) : "";
+}
+
+function saveVisual() {
+    if (!dexieData || selectedAssetId == null) return;
+
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+
+    try { row.avatar = JSON.parse(document.getElementById("avatar").value || "null"); } catch {}
+    try { row.scene = JSON.parse(document.getElementById("scene").value || "null"); } catch {}
+    try { row.userCharacter = JSON.parse(document.getElementById("userCharacter").value || "null"); } catch {}
+    try { row.systemCharacter = JSON.parse(document.getElementById("systemCharacter").value || "null"); } catch {}
+
+    smarhamrSetRows(dexieData, "characters", rows);
+    alert("Visual identity saved.");
+}
+
+/* ============================================================
+   INITIAL MESSAGES PANEL
+   ============================================================ */
+function populateInitialMessages(row) {
+    document.getElementById("initialMessages").value =
+        row.initialMessages ? JSON.stringify(row.initialMessages, null, 2) : "";
+}
+
+function saveInitialMessages() {
+    if (!dexieData || selectedAssetId == null) return;
+
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+
+    try {
+        row.initialMessages = JSON.parse(document.getElementById("initialMessages").value || "[]");
+        smarhamrSetRows(dexieData, "characters", rows);
+        alert("Initial messages saved.");
+    } catch {
+        alert("Invalid JSON for initial messages.");
+    }
+}
+
+/* ============================================================
+   LORE PANEL
+   ============================================================ */
 function populateLore(row) {
     document.getElementById("loreBookUrls").value =
         row.loreBookUrls ? JSON.stringify(row.loreBookUrls, null, 2) : "";
@@ -445,44 +543,58 @@ function populateLore(row) {
 
 function saveLore() {
     if (!dexieData || selectedAssetId == null) return;
+
     const rows = smarhamrGetRows(dexieData, "characters");
     const row = rows.find(r => r.id === selectedAssetId);
-    if (!row) return;
 
     try {
         row.loreBookUrls = JSON.parse(document.getElementById("loreBookUrls").value || "[]");
         smarhamrSetRows(dexieData, "characters", rows);
-        smarhamrSaveState(dexieData, currentFileName);
         alert("Lore saved.");
     } catch {
         alert("Invalid JSON for loreBookUrls.");
     }
 }
 
-/* Custom Code */
+/* ============================================================
+   CUSTOM CODE PANEL
+   ============================================================ */
 function populateCustomCode(row) {
     document.getElementById("customCode").value = row.customCode || "";
 }
 
 function saveCustomCode() {
     if (!dexieData || selectedAssetId == null) return;
+
     const rows = smarhamrGetRows(dexieData, "characters");
     const row = rows.find(r => r.id === selectedAssetId);
-    if (!row) return;
 
     row.customCode = document.getElementById("customCode").value;
     smarhamrSetRows(dexieData, "characters", rows);
-    smarhamrSaveState(dexieData, currentFileName);
     alert("Custom code saved.");
 }
 
-/* Shortcuts scroll */
+/* ============================================================
+   THREAD BUILDER (scratchpad only)
+   ============================================================ */
+function populateThreadBuilder(row) {
+    // WC mode does NOT persist thread builder fields.
+    document.getElementById("threadLore").value = "";
+    document.getElementById("threadMemory").value = "";
+    document.getElementById("threadMessages").value = "";
+}
+
+/* ============================================================
+   SHORTCUT SCROLL
+   ============================================================ */
 function scrollToPanel(id) {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-/* Clipboard persistence */
+/* ============================================================
+   CLIPBOARD PERSISTENCE
+   ============================================================ */
 function loadClipboard() {
     const text = localStorage.getItem("smarhamrClipboard") || "";
     document.getElementById("clipboardText").value = text;
@@ -496,7 +608,9 @@ function saveClipboard() {
     localStorage.setItem("smarhamrClipboard", text);
 }
 
-/* Clipboard open/close */
+/* ============================================================
+   CLIPBOARD OPEN/CLOSE
+   ============================================================ */
 function setClipboardOpen(open) {
     const panel = document.getElementById("clipboardPanel");
     const toggle = document.getElementById("clipboardToggle");
@@ -512,7 +626,9 @@ function setClipboardOpen(open) {
     localStorage.setItem("smarhamrClipboardOpen", open ? "true" : "false");
 }
 
-/* Clipboard events */
+/* ============================================================
+   CLIPBOARD EVENTS
+   ============================================================ */
 document.getElementById("clipboardTab").addEventListener("click", () => {
     const open = localStorage.getItem("smarhamrClipboardOpen") === "true";
     setClipboardOpen(!open);
@@ -524,6 +640,7 @@ document.getElementById("clipboardToggle").addEventListener("click", () => {
 });
 
 document.getElementById("clipboardText").addEventListener("input", saveClipboard);
+
 </script>
 </body>
 </html>
