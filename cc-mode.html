@@ -330,7 +330,6 @@ function resetScratch() {
     });
 }
 
-/* NEW: Save to Memory (manual persistence) */
 function saveToMemory() {
     if (!dexieData) {
         alert("No Dexie data loaded.");
@@ -391,7 +390,6 @@ function selectAsset(row) {
     populateCustomCode(row);
 }
 
-/* Highlight active asset button */
 function highlightSelectedAsset() {
     const list = document.getElementById("assetList");
     Array.from(list.querySelectorAll("button")).forEach(btn => {
@@ -420,7 +418,7 @@ function populateIdentity(row) {
 }
 
 /* ============================================================
-   BEHAVIOR PANEL
+   WORLD BEHAVIOR PANEL
    ============================================================ */
 function populateBehavior(row) {
     document.getElementById("roleInstruction").value = row.roleInstruction || "";
@@ -451,7 +449,7 @@ function saveBehavior() {
     row.textEmbeddingModelName = document.getElementById("textEmbeddingModelName").value;
 
     smarhamrSetRows(dexieData, "characters", rows);
-    alert("Behavior saved.");
+    alert("World behavior saved.");
 }
 
 /* ============================================================
@@ -478,6 +476,7 @@ function savePrompting() {
     smarhamrSetRows(dexieData, "characters", rows);
     alert("Prompting saved.");
 }
+
 /* ============================================================
    VISUAL PANEL
    ============================================================ */
@@ -578,8 +577,6 @@ function saveCustomCode() {
    THREAD BUILDER (scratchpad only)
    ============================================================ */
 function populateThreadBuilder(row) {
-    // This mode does NOT persist thread builder fields.
-    // They are scratchpad-only by design.
     document.getElementById("threadLore").value = "";
     document.getElementById("threadMemory").value = "";
     document.getElementById("threadMessages").value = "";
@@ -643,5 +640,6 @@ document.getElementById("clipboardToggle").addEventListener("click", () => {
 document.getElementById("clipboardText").addEventListener("input", saveClipboard);
 
 </script>
+
 </body>
 </html>
