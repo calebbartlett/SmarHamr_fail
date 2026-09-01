@@ -51,13 +51,17 @@ body {
     height: calc(100vh - 40px);
 }
 
+/* Resizable left nav via native resize */
 .left-nav {
-    width: 280px;
+    width: 240px;
+    min-width: 180px;
+    max-width: 480px;
+    resize: horizontal;
+    overflow: auto;
     background: #181818;
     border-right: 1px solid #333;
     padding: 10px;
     box-sizing: border-box;
-    overflow-y: auto;
 }
 
 .workspace {
