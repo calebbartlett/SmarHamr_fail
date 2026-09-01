@@ -2,37 +2,20 @@
    SmarHamr Global Config
    ============================================================ */
 
+let dexieData = null;
+let currentFileName = "Scratch Dexie";
+
 const SmarHamrConfig = {
-
-    /* --------------------------------------------------------
-       File Locations
-       -------------------------------------------------------- */
     scratchFile: "dexie-scratch.json",
-
-    /* --------------------------------------------------------
-       Export Settings
-       -------------------------------------------------------- */
-    exportPrefix: "smarhamr",     // default prefix if user doesn't provide one
-    exportExtension: "json.gz",   // always gzip
+    exportPrefix: "smarhamr",
+    exportExtension: "json.gz",
     timestampFormat: "YYYYMMDDhhmm",
-
-    /* --------------------------------------------------------
-       Template Filenames (future expansion)
-       -------------------------------------------------------- */
-    templateCharacter: "template-character.json",
-    templateWorld: "template-world.json",
-    templateThread: "template-thread.json",
-
-    /* --------------------------------------------------------
-       UI Settings
-       -------------------------------------------------------- */
     autoLoadScratchOnStartup: true,
     debugMode: false
 };
 
-
 /* ============================================================
-   Utility: Timestamp Builder
+   Timestamp
    ============================================================ */
 function smarhamrTimestamp() {
     const now = new Date();
@@ -45,15 +28,17 @@ function smarhamrTimestamp() {
     );
 }
 
-
 /* ============================================================
-   Load Scratch Dexie
+   Scratch Loader
    ============================================================ */
 async function smarhamrLoadScratch() {
     try {
         const res = await fetch(SmarHamrConfig.scratchFile);
         const data = await res.json();
         if (SmarHamrConfig.debugMode) console.log("Scratch loaded:", data);
+        dexieData = data;
+        currentFileName = "Scratch Dexie";
+        updateCurrentFileNameUI();
         return data;
     } catch (err) {
         console.error("Failed to load scratch Dexie:", err);
@@ -61,63 +46,56 @@ async function smarhamrLoadScratch() {
     }
 }
 
-
 /* ============================================================
-   Load Dexie Export (.json or .json.gz)
+   Export Loader (.json / .json.gz)
    ============================================================ */
 function smarhamrLoadExport(file, callback) {
     const reader = new FileReader();
-
     const isGzip =
         file.name.endsWith(".gz") ||
         file.name.endsWith(".json.gz");
 
     if (isGzip) {
-        // Read binary
         reader.onload = e => {
             try {
                 const binary = new Uint8Array(e.target.result);
-
-                // Decompress → string
                 const decompressed = pako.ungzip(binary, { to: "string" });
-
-                // Parse JSON
                 const data = JSON.parse(decompressed);
-
                 if (SmarHamrConfig.debugMode) console.log("GZ export loaded:", data);
-
+                dexieData = data;
+                currentFileName = file.name;
+                updateCurrentFileNameUI();
                 callback(data);
             } catch (err) {
                 alert("Invalid .json.gz export.");
                 console.error(err);
             }
         };
-
         reader.readAsArrayBuffer(file);
         return;
     }
 
-    // Plain JSON
     reader.onload = e => {
         try {
             const data = JSON.parse(e.target.result);
             if (SmarHamrConfig.debugMode) console.log("JSON export loaded:", data);
+            dexieData = data;
+            currentFileName = file.name;
+            updateCurrentFileNameUI();
             callback(data);
         } catch (err) {
             alert("Invalid JSON export.");
             console.error(err);
         }
     };
-
     reader.readAsText(file);
 }
 
-
 /* ============================================================
-   Export Dexie (raw JSON → gzip)
+   Export (gzip)
    ============================================================ */
-function smarhamrExport(prefix, dexieData) {
-    if (!dexieData) {
+function smarhamrExport(prefix, data) {
+    if (!data) {
         alert("No Dexie data loaded.");
         return;
     }
@@ -129,10 +107,7 @@ function smarhamrExport(prefix, dexieData) {
     const timestamp = smarhamrTimestamp();
     const filename = `${userPrefix}.${SmarHamrConfig.exportPrefix}.${timestamp}.${SmarHamrConfig.exportExtension}`;
 
-    // RAW JSON (no pretty formatting)
-    const rawJson = JSON.stringify(dexieData);
-
-    // GZIP
+    const rawJson = JSON.stringify(data);
     const gzipped = pako.gzip(rawJson);
 
     const blob = new Blob([gzipped], { type: "application/gzip" });
@@ -146,23 +121,35 @@ function smarhamrExport(prefix, dexieData) {
     URL.revokeObjectURL(url);
 }
 
-
 /* ============================================================
-   Helper: Get Table Rows
+   Helpers
    ============================================================ */
-function smarhamrGetRows(dexieData, tableName) {
-    if (!dexieData || !dexieData.data || !dexieData.data.data) return [];
-    const table = dexieData.data.data.find(t => t.tableName === tableName);
+function smarhamrGetRows(data, tableName) {
+    if (!data || !data.data || !data.data.data) return [];
+    const table = data.data.data.find(t => t.tableName === tableName);
     return table ? table.rows || [] : [];
 }
 
+function smarhamrSetRows(data, tableName, rows) {
+    const table = data.data.data.find(t => t.tableName === tableName);
+    if (table) table.rows = rows;
+}
 
 /* ============================================================
-   Helper: Write Table Rows
+   UI helpers (top bar)
    ============================================================ */
-function smarhamrSetRows(dexieData, tableName, rows) {
-    const table = dexieData.data.data.find(t => t.tableName === tableName);
-    if (table) {
-        table.rows = rows;
-    }
+function updateCurrentFileNameUI() {
+    const el = document.getElementById("currentFileName");
+    if (el) el.textContent = currentFileName;
+}
+
+function setActiveMode(mode) {
+    document.querySelectorAll(".modeBtn").forEach(btn => btn.classList.remove("active"));
+    const idMap = {
+        cc: "ccModeBtn",
+        wc: "wcModeBtn",
+        de: "deModeBtn"
+    };
+    const el = document.getElementById(idMap[mode]);
+    if (el) el.classList.add("active");
 }
