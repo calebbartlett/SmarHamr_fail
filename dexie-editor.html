@@ -11,23 +11,23 @@
     <div id="currentFileName">Scratch Dexie</div>
 
     <div id="modeButtons">
-        <button class="modeBtn" id="ccModeBtn" onclick="goAssets()">Character‑Centric</button>
-        <button class="modeBtn" id="wcModeBtn" onclick="goAssets()">World‑Centric</button>
-        <button class="modeBtn active" id="deModeBtn">Dexie Editor</button>
+        <button class="modeBtn" id="ccModeBtn" onclick="goCC()">Character‑Centric</button>
+        <button class="modeBtn" id="wcModeBtn" onclick="goWC()">World‑Centric</button>
+        <button class="modeBtn active" id="deModeBtn" onclick="goDexie()">Dexie Editor</button>
     </div>
 
     <div id="branding">SmarHamr by yggdrasil75</div>
 </div>
 
 <div class="app-root">
-    <div class="left-nav">
+    <div class="left-nav" id="leftNav">
+
         <div class="panel">
             <h3>File Management</h3>
             <input type="file" id="dexieFile" accept=".json,.json.gz,.gz">
             <button onclick="importDexie()">Load Export</button>
             <button onclick="resetScratch()">Reset Scratch</button>
             <button onclick="exportDexie()">Export</button>
-            <p id="dataSourceLabel"><em>Scratch not yet loaded.</em></p>
         </div>
 
         <div class="panel">
@@ -36,9 +36,11 @@
                 <p><em>No tables loaded.</em></p>
             </div>
         </div>
+
     </div>
 
     <div class="workspace">
+
         <div class="panel">
             <h3 id="selectedTableName"><em>No table selected.</em></h3>
         </div>
@@ -55,6 +57,7 @@
             <textarea id="rowJson"></textarea>
             <button onclick="applyRowEdit()">Apply Row Edit</button>
         </div>
+
     </div>
 </div>
 
@@ -66,35 +69,30 @@ let currentRows = [];
 let currentRowIndex = null;
 
 window.addEventListener("load", async () => {
-    if (!dexieData && SmarHamrConfig.autoLoadScratchOnStartup) {
+    const hasState = smarhamrLoadState();
+    if (!hasState && SmarHamrConfig.autoLoadScratchOnStartup) {
         await smarhamrLoadScratch();
-        document.getElementById("dataSourceLabel").textContent = "Scratch Dexie loaded";
     } else {
         updateCurrentFileNameUI();
     }
     renderTables();
 });
 
-function goAssets() {
-    window.location.href = "smarhamr-assets.html";
-}
+function goCC() { window.location.href = "cc-mode.html"; }
+function goWC() { window.location.href = "wc-mode.html"; }
+function goDexie() { window.location.href = "dexie-editor.html"; }
 
 function importDexie() {
     const file = document.getElementById("dexieFile").files[0];
-    if (!file) {
-        alert("Choose a .json or .json.gz file first.");
-        return;
-    }
+    if (!file) { alert("Choose a file first."); return; }
 
     smarhamrLoadExport(file, data => {
-        document.getElementById("dataSourceLabel").textContent = `Loaded: ${file.name}`;
         renderTables();
     });
 }
 
 function resetScratch() {
     smarhamrLoadScratch().then(() => {
-        document.getElementById("dataSourceLabel").textContent = "Scratch Dexie loaded";
         renderTables();
     });
 }
@@ -111,7 +109,7 @@ function renderTables() {
         return;
     }
 
-    const tables = dexieData.data.tables || [];
+    const tables = dexieData.data.data || [];
     if (!tables.length) {
         list.innerHTML = "<p><em>No tables found.</em></p>";
         return;
@@ -120,8 +118,8 @@ function renderTables() {
     list.innerHTML = "";
     tables.forEach(t => {
         const btn = document.createElement("button");
-        btn.textContent = `${t.name} (${t.rowCount} rows)`;
-        btn.onclick = () => selectTable(t.name);
+        btn.textContent = `${t.tableName} (${(t.rows || []).length} rows)`;
+        btn.onclick = () => selectTable(t.tableName);
         list.appendChild(btn);
     });
 }
@@ -171,6 +169,7 @@ function applyRowEdit() {
         const updated = JSON.parse(document.getElementById("rowJson").value);
         currentRows[currentRowIndex] = updated;
         smarhamrSetRows(dexieData, currentTable, currentRows);
+        smarhamrSaveState(dexieData, currentFileName);
         alert("Row updated.");
     } catch (err) {
         alert("Invalid JSON.");
