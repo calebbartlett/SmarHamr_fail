@@ -4,9 +4,94 @@
 <meta charset="UTF-8">
 <title>SmarHamr — Character‑Centric Mode</title>
 <link rel="stylesheet" href="ui.css">
+<style>
+/* Workspace + clipboard layout */
+.app-root {
+    display: flex;
+    height: calc(100vh - 40px);
+}
+
+/* center workspace + right clipboard */
+.workspace-shell {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* main stacked workspace */
+.workspace {
+    flex: 1;
+    padding: 10px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+/* clipboard vertical tab + panel */
+.clipboard-tab {
+    position: relative;
+    width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #181818;
+    border-left: 1px solid #333;
+    cursor: pointer;
+}
+
+.clipboard-tab span {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 0.75rem;
+    color: #ccc;
+}
+
+.clipboard {
+    width: 300px;
+    min-width: 200px;
+    max-width: 600px;
+    resize: horizontal;
+    overflow: auto;
+    background: #181818;
+    border-left: 1px solid #333;
+    padding: 10px;
+    box-sizing: border-box;
+    display: none; /* collapsed by default */
+}
+
+.clipboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.clipboard-header button {
+    font-size: 0.75rem;
+}
+
+/* shortcuts bar */
+.shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.shortcuts button {
+    font-size: 0.75rem;
+}
+
+/* active asset button */
+.asset-list button.active {
+    background: #4a7;
+    color: #111;
+    border-color: #6c9;
+}
+</style>
 </head>
 <body>
 
+<!-- TOP BAR -->
 <div id="topbar">
     <div id="currentFileName">Scratch Dexie</div>
 
@@ -20,6 +105,8 @@
 </div>
 
 <div class="app-root">
+
+    <!-- LEFT NAV -->
     <div class="left-nav" id="leftNav">
 
         <div class="panel">
@@ -39,26 +126,144 @@
 
     </div>
 
-    <div class="workspace">
+    <!-- CENTER WORKSPACE + RIGHT CLIPBOARD -->
+    <div class="workspace-shell">
 
-        <div class="panel">
-            <h3>Asset Overview (Character‑Centric)</h3>
-            <p id="assetOverview"><em>No asset selected.</em></p>
+        <!-- MAIN WORKSPACE (stacked panels) -->
+        <div class="workspace">
+
+            <!-- Shortcuts -->
+            <div class="panel">
+                <h3>Shortcuts</h3>
+                <div class="shortcuts">
+                    <button onclick="scrollToPanel('identityPanel')">Identity</button>
+                    <button onclick="scrollToPanel('behaviorPanel')">Behavior</button>
+                    <button onclick="scrollToPanel('promptingPanel')">Prompting</button>
+                    <button onclick="scrollToPanel('visualPanel')">Visual</button>
+                    <button onclick="scrollToPanel('initialMessagesPanel')">Initial Messages</button>
+                    <button onclick="scrollToPanel('lorePanel')">Lore</button>
+                    <button onclick="scrollToPanel('customCodePanel')">Custom Code</button>
+                    <button onclick="scrollToPanel('threadPanel')">Thread Builder</button>
+                </div>
+            </div>
+
+            <!-- Identity Panel -->
+            <div class="panel" id="identityPanel">
+                <h3>Identity</h3>
+                <pre id="identityView"><em>No asset selected.</em></pre>
+            </div>
+
+            <!-- Behavior Panel -->
+            <div class="panel" id="behaviorPanel">
+                <h3>Behavior</h3>
+                <label>Role Instruction</label>
+                <textarea id="roleInstruction"></textarea>
+
+                <label>General Writing Instructions</label>
+                <textarea id="generalWritingInstructions"></textarea>
+
+                <label>Reminder Message</label>
+                <textarea id="reminderMessage"></textarea>
+
+                <label>Message Wrapper Style</label>
+                <textarea id="messageWrapperStyle"></textarea>
+
+                <label>Fit Messages In Context Method</label>
+                <input id="fitMessagesInContextMethod" type="text">
+
+                <label>Auto Generate Memories</label>
+                <input id="autoGenerateMemories" type="text">
+
+                <label>Temperature</label>
+                <input id="temperature" type="number" step="0.01">
+
+                <label>Max Tokens Per Message</label>
+                <input id="maxTokensPerMessage" type="number">
+
+                <label>Text Embedding Model Name</label>
+                <input id="textEmbeddingModelName" type="text">
+
+                <button onclick="saveBehavior()">Save Behavior</button>
+            </div>
+
+            <!-- Prompting Panel -->
+            <div class="panel" id="promptingPanel">
+                <h3>Prompting</h3>
+                <label>Image Prompt Prefix</label>
+                <textarea id="imagePromptPrefix"></textarea>
+
+                <label>Image Prompt Suffix</label>
+                <textarea id="imagePromptSuffix"></textarea>
+
+                <label>Image Prompt Triggers</label>
+                <textarea id="imagePromptTriggers"></textarea>
+
+                <label>Message Input Placeholder</label>
+                <input id="messageInputPlaceholder" type="text">
+
+                <button onclick="savePrompting()">Save Prompting</button>
+            </div>
+
+            <!-- Visual Identity Panel -->
+            <div class="panel" id="visualPanel">
+                <h3>Visual Identity</h3>
+                <label>Avatar (JSON)</label>
+                <textarea id="avatar"></textarea>
+
+                <label>Scene (JSON)</label>
+                <textarea id="scene"></textarea>
+
+                <label>User Character (JSON)</label>
+                <textarea id="userCharacter"></textarea>
+
+                <label>System Character (JSON)</label>
+                <textarea id="systemCharacter"></textarea>
+
+                <button onclick="saveVisual()">Save Visual Identity</button>
+            </div>
+
+            <!-- Initial Messages Panel -->
+            <div class="panel" id="initialMessagesPanel">
+                <h3>Initial Messages (JSON array)</h3>
+                <textarea id="initialMessages"></textarea>
+                <button onclick="saveInitialMessages()">Save Initial Messages</button>
+            </div>
+
+            <!-- Lore Panel -->
+            <div class="panel" id="lorePanel">
+                <h3>Lore Book URLs (JSON array)</h3>
+                <textarea id="loreBookUrls"></textarea>
+                <button onclick="saveLore()">Save Lore</button>
+            </div>
+
+            <!-- Custom Code Panel -->
+            <div class="panel" id="customCodePanel">
+                <h3>Custom Code</h3>
+                <textarea id="customCode"></textarea>
+                <button onclick="saveCustomCode()">Save Custom Code</button>
+            </div>
+
+            <!-- Thread Builder Panel (scratch, not yet wired to threads table) -->
+            <div class="panel" id="threadPanel">
+                <h3>Thread Builder (Character focus)</h3>
+                <textarea id="threadLore" placeholder="Thread lore / context..."></textarea>
+                <textarea id="threadMemory" placeholder="Memory notes..."></textarea>
+                <textarea id="threadMessages" placeholder="Message planning..."></textarea>
+            </div>
+
         </div>
 
-        <div class="panel">
-            <h3>Thread Builder (Character focus)</h3>
-            <textarea id="threadLore" placeholder="Thread lore / context..."></textarea>
+        <!-- RIGHT-HAND CLIPBOARD -->
+        <div class="clipboard-tab" id="clipboardTab">
+            <span>Clipboard</span>
         </div>
 
-        <div class="panel">
-            <h3>Memory Notes</h3>
-            <textarea id="threadMemory" placeholder="Memory notes..."></textarea>
-        </div>
-
-        <div class="panel">
-            <h3>Messages</h3>
-            <textarea id="threadMessages" placeholder="Message planning..."></textarea>
+        <div class="clipboard" id="clipboardPanel">
+            <div class="clipboard-header">
+                <span>Clipboard</span>
+                <button id="clipboardToggle">&lt; Hide</button>
+            </div>
+            <textarea id="clipboardText"></textarea>
         </div>
 
     </div>
@@ -67,6 +272,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 <script src="smarhamr-config.js"></script>
 <script>
+let selectedAssetId = null;
+
+/* Startup */
 window.addEventListener("load", async () => {
     const hasState = smarhamrLoadState();
     if (!hasState && SmarHamrConfig.autoLoadScratchOnStartup) {
@@ -75,12 +283,15 @@ window.addEventListener("load", async () => {
         updateCurrentFileNameUI();
     }
     renderAssets();
+    loadClipboard();
 });
 
+/* Navigation */
 function goCC() { window.location.href = "cc-mode.html"; }
 function goWC() { window.location.href = "wc-mode.html"; }
 function goDexie() { window.location.href = "dexie-editor.html"; }
 
+/* File management */
 function importDexie() {
     const file = document.getElementById("dexieFile").files[0];
     if (!file) { alert("Choose a file first."); return; }
@@ -101,6 +312,7 @@ function exportDexie() {
     smarhamrExport(prefix, dexieData);
 }
 
+/* Asset list */
 function renderAssets() {
     const list = document.getElementById("assetList");
     if (!dexieData) {
@@ -119,17 +331,239 @@ function renderAssets() {
         const btn = document.createElement("button");
         btn.textContent = row.name || `Asset #${row.id}`;
         btn.onclick = () => selectAsset(row);
+        if (row.id === selectedAssetId) btn.classList.add("active");
         list.appendChild(btn);
     });
 }
 
+/* Select asset + populate panels */
 function selectAsset(row) {
-    const overview = document.getElementById("assetOverview");
-    overview.textContent =
-        `Name: ${row.name || "Unnamed"}\n` +
-        `Model: ${row.modelName}\n` +
-        `Role: ${row.roleInstruction || "(none)"}`;
+    selectedAssetId = row.id;
+    highlightSelectedAsset();
+    populateIdentity(row);
+    populateBehavior(row);
+    populatePrompting(row);
+    populateVisual(row);
+    populateInitialMessages(row);
+    populateLore(row);
+    populateCustomCode(row);
 }
+
+/* Highlight active asset button */
+function highlightSelectedAsset() {
+    const list = document.getElementById("assetList");
+    Array.from(list.querySelectorAll("button")).forEach(btn => {
+        btn.classList.remove("active");
+        if (btn.textContent.includes(`#${selectedAssetId}`)) {
+            btn.classList.add("active");
+        }
+    });
+}
+
+/* Identity view */
+function populateIdentity(row) {
+    const el = document.getElementById("identityView");
+    const identity = {
+        id: row.id,
+        name: row.name,
+        modelName: row.modelName,
+        uuid: row.uuid,
+        creationTime: row.creationTime,
+        lastMessageTime: row.lastMessageTime,
+        folderPath: row.folderPath
+    };
+    el.textContent = JSON.stringify(identity, null, 2);
+}
+
+/* Behavior */
+function populateBehavior(row) {
+    document.getElementById("roleInstruction").value = row.roleInstruction || "";
+    document.getElementById("generalWritingInstructions").value = row.generalWritingInstructions || "";
+    document.getElementById("reminderMessage").value = row.reminderMessage || "";
+    document.getElementById("messageWrapperStyle").value = row.messageWrapperStyle || "";
+    document.getElementById("fitMessagesInContextMethod").value = row.fitMessagesInContextMethod || "";
+    document.getElementById("autoGenerateMemories").value = row.autoGenerateMemories || "";
+    document.getElementById("temperature").value = row.temperature ?? "";
+    document.getElementById("maxTokensPerMessage").value = row.maxTokensPerMessage ?? "";
+    document.getElementById("textEmbeddingModelName").value = row.textEmbeddingModelName || "";
+}
+
+function saveBehavior() {
+    if (!dexieData || selectedAssetId == null) return;
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+    if (!row) return;
+
+    row.roleInstruction = document.getElementById("roleInstruction").value;
+    row.generalWritingInstructions = document.getElementById("generalWritingInstructions").value;
+    row.reminderMessage = document.getElementById("reminderMessage").value;
+    row.messageWrapperStyle = document.getElementById("messageWrapperStyle").value;
+    row.fitMessagesInContextMethod = document.getElementById("fitMessagesInContextMethod").value;
+    row.autoGenerateMemories = document.getElementById("autoGenerateMemories").value;
+    row.temperature = parseFloat(document.getElementById("temperature").value) || row.temperature;
+    row.maxTokensPerMessage = parseInt(document.getElementById("maxTokensPerMessage").value) || row.maxTokensPerMessage;
+    row.textEmbeddingModelName = document.getElementById("textEmbeddingModelName").value;
+
+    smarhamrSetRows(dexieData, "characters", rows);
+    smarhamrSaveState(dexieData, currentFileName);
+    alert("Behavior saved.");
+}
+
+/* Prompting */
+function populatePrompting(row) {
+    document.getElementById("imagePromptPrefix").value = row.imagePromptPrefix || "";
+    document.getElementById("imagePromptSuffix").value = row.imagePromptSuffix || "";
+    document.getElementById("imagePromptTriggers").value = row.imagePromptTriggers || "";
+    document.getElementById("messageInputPlaceholder").value = row.messageInputPlaceholder || "";
+}
+
+function savePrompting() {
+    if (!dexieData || selectedAssetId == null) return;
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+    if (!row) return;
+
+    row.imagePromptPrefix = document.getElementById("imagePromptPrefix").value;
+    row.imagePromptSuffix = document.getElementById("imagePromptSuffix").value;
+    row.imagePromptTriggers = document.getElementById("imagePromptTriggers").value;
+    row.messageInputPlaceholder = document.getElementById("messageInputPlaceholder").value;
+
+    smarhamrSetRows(dexieData, "characters", rows);
+    smarhamrSaveState(dexieData, currentFileName);
+    alert("Prompting saved.");
+}
+
+/* Visual */
+function populateVisual(row) {
+    document.getElementById("avatar").value = row.avatar ? JSON.stringify(row.avatar, null, 2) : "";
+    document.getElementById("scene").value = row.scene ? JSON.stringify(row.scene, null, 2) : "";
+    document.getElementById("userCharacter").value = row.userCharacter ? JSON.stringify(row.userCharacter, null, 2) : "";
+    document.getElementById("systemCharacter").value = row.systemCharacter ? JSON.stringify(row.systemCharacter, null, 2) : "";
+}
+
+function saveVisual() {
+    if (!dexieData || selectedAssetId == null) return;
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+    if (!row) return;
+
+    try { row.avatar = JSON.parse(document.getElementById("avatar").value || "null"); } catch {}
+    try { row.scene = JSON.parse(document.getElementById("scene").value || "null"); } catch {}
+    try { row.userCharacter = JSON.parse(document.getElementById("userCharacter").value || "null"); } catch {}
+    try { row.systemCharacter = JSON.parse(document.getElementById("systemCharacter").value || "null"); } catch {}
+
+    smarhamrSetRows(dexieData, "characters", rows);
+    smarhamrSaveState(dexieData, currentFileName);
+    alert("Visual identity saved.");
+}
+
+/* Initial Messages */
+function populateInitialMessages(row) {
+    document.getElementById("initialMessages").value =
+        row.initialMessages ? JSON.stringify(row.initialMessages, null, 2) : "";
+}
+
+function saveInitialMessages() {
+    if (!dexieData || selectedAssetId == null) return;
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+    if (!row) return;
+
+    try {
+        row.initialMessages = JSON.parse(document.getElementById("initialMessages").value || "[]");
+        smarhamrSetRows(dexieData, "characters", rows);
+        smarhamrSaveState(dexieData, currentFileName);
+        alert("Initial messages saved.");
+    } catch {
+        alert("Invalid JSON for initial messages.");
+    }
+}
+
+/* Lore */
+function populateLore(row) {
+    document.getElementById("loreBookUrls").value =
+        row.loreBookUrls ? JSON.stringify(row.loreBookUrls, null, 2) : "";
+}
+
+function saveLore() {
+    if (!dexieData || selectedAssetId == null) return;
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+    if (!row) return;
+
+    try {
+        row.loreBookUrls = JSON.parse(document.getElementById("loreBookUrls").value || "[]");
+        smarhamrSetRows(dexieData, "characters", rows);
+        smarhamrSaveState(dexieData, currentFileName);
+        alert("Lore saved.");
+    } catch {
+        alert("Invalid JSON for loreBookUrls.");
+    }
+}
+
+/* Custom Code */
+function populateCustomCode(row) {
+    document.getElementById("customCode").value = row.customCode || "";
+}
+
+function saveCustomCode() {
+    if (!dexieData || selectedAssetId == null) return;
+    const rows = smarhamrGetRows(dexieData, "characters");
+    const row = rows.find(r => r.id === selectedAssetId);
+    if (!row) return;
+
+    row.customCode = document.getElementById("customCode").value;
+    smarhamrSetRows(dexieData, "characters", rows);
+    smarhamrSaveState(dexieData, currentFileName);
+    alert("Custom code saved.");
+}
+
+/* Shortcuts scroll */
+function scrollToPanel(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* Clipboard persistence */
+function loadClipboard() {
+    const text = localStorage.getItem("smarhamrClipboard") || "";
+    document.getElementById("clipboardText").value = text;
+
+    const open = localStorage.getItem("smarhamrClipboardOpen") === "true";
+    setClipboardOpen(open);
+}
+
+function saveClipboard() {
+    const text = document.getElementById("clipboardText").value;
+    localStorage.setItem("smarhamrClipboard", text);
+}
+
+/* Clipboard open/close */
+function setClipboardOpen(open) {
+    const panel = document.getElementById("clipboardPanel");
+    const toggle = document.getElementById("clipboardToggle");
+    if (open) {
+        panel.style.display = "block";
+        toggle.textContent = "< Hide";
+    } else {
+        panel.style.display = "none";
+        toggle.textContent = "> Show";
+    }
+    localStorage.setItem("smarhamrClipboardOpen", open ? "true" : "false");
+}
+
+/* Clipboard events */
+document.getElementById("clipboardTab").addEventListener("click", () => {
+    const open = localStorage.getItem("smarhamrClipboardOpen") === "true";
+    setClipboardOpen(!open);
+});
+
+document.getElementById("clipboardToggle").addEventListener("click", () => {
+    const open = localStorage.getItem("smarhamrClipboardOpen") === "true";
+    setClipboardOpen(!open);
+});
+
+document.getElementById("clipboardText").addEventListener("input", saveClipboard);
 </script>
 </body>
 </html>
