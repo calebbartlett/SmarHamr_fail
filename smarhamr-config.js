@@ -1,7 +1,5 @@
 /* ============================================================
    SmarHamr Global Config
-   Centralized settings for filenames, prefixes, templates,
-   scratch paths, and future system-wide options.
    ============================================================ */
 
 const SmarHamrConfig = {
@@ -65,20 +63,52 @@ async function smarhamrLoadScratch() {
 
 
 /* ============================================================
-   Load Dexie Export (JSON)
+   Load Dexie Export (.json or .json.gz)
    ============================================================ */
 function smarhamrLoadExport(file, callback) {
     const reader = new FileReader();
+
+    const isGzip =
+        file.name.endsWith(".gz") ||
+        file.name.endsWith(".json.gz");
+
+    if (isGzip) {
+        // Read binary
+        reader.onload = e => {
+            try {
+                const binary = new Uint8Array(e.target.result);
+
+                // Decompress → string
+                const decompressed = pako.ungzip(binary, { to: "string" });
+
+                // Parse JSON
+                const data = JSON.parse(decompressed);
+
+                if (SmarHamrConfig.debugMode) console.log("GZ export loaded:", data);
+
+                callback(data);
+            } catch (err) {
+                alert("Invalid .json.gz export.");
+                console.error(err);
+            }
+        };
+
+        reader.readAsArrayBuffer(file);
+        return;
+    }
+
+    // Plain JSON
     reader.onload = e => {
         try {
             const data = JSON.parse(e.target.result);
-            if (SmarHamrConfig.debugMode) console.log("Export loaded:", data);
+            if (SmarHamrConfig.debugMode) console.log("JSON export loaded:", data);
             callback(data);
         } catch (err) {
             alert("Invalid JSON export.");
             console.error(err);
         }
     };
+
     reader.readAsText(file);
 }
 
@@ -102,7 +132,7 @@ function smarhamrExport(prefix, dexieData) {
     // RAW JSON (no pretty formatting)
     const rawJson = JSON.stringify(dexieData);
 
-    // GZIP (requires pako.js)
+    // GZIP
     const gzipped = pako.gzip(rawJson);
 
     const blob = new Blob([gzipped], { type: "application/gzip" });
